@@ -1,0 +1,26 @@
+{
+  "name": "audio-transcriber",
+  "version": "1.0.0",
+  "description": "Local audio transcription app with SvelteKit frontend and FastAPI backend",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && python main.py",
+    "dev:frontend": "cd frontend && npm run dev",
+    "setup": "npm run setup:frontend && npm run setup:backend",
+    "setup:frontend": "cd frontend && npm install",
+    "setup:backend": "cd backend && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt",
+    "build": "cd frontend && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "audio",
+    "transcription",
+    "whisper",
+    "sveltekit",
+    "fastapi"
+  ],
+  "author": "Brett Austin Eastman",
+  "license": "MIT"
+}
