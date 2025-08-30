@@ -32,10 +32,22 @@
       return;
     }
 
+    console.log(
+      "Uploading file:",
+      file.name,
+      "Size:",
+      file.size,
+      "Type:",
+      file.type
+    );
+
     try {
       await transcriptionStore.uploadFile(file, selectedLanguage || undefined);
     } catch (error) {
       console.error("Upload failed:", error);
+      alert(
+        `Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
   }
 

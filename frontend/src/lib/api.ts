@@ -45,20 +45,26 @@ export class TranscriptionAPI {
       });
 
       xhr.addEventListener("load", () => {
+        console.log("XHR Response:", xhr.status, xhr.responseText);
         if (xhr.status === 200) {
           try {
             const response = JSON.parse(xhr.responseText);
             resolve(response);
           } catch (e) {
+            console.error("JSON Parse Error:", e);
             reject(new Error("Invalid JSON response"));
           }
         } else {
-          reject(new Error(`Upload failed: ${xhr.status}`));
+          console.error("HTTP Error:", xhr.status, xhr.responseText);
+          reject(
+            new Error(`Upload failed: ${xhr.status} - ${xhr.responseText}`)
+          );
         }
       });
 
-      xhr.addEventListener("error", () => {
-        reject(new Error("Upload failed"));
+      xhr.addEventListener("error", (event) => {
+        console.error("XHR Error:", event);
+        reject(new Error("Upload failed - Network error"));
       });
 
       xhr.open("POST", `${API_BASE_URL}/transcribe`);
