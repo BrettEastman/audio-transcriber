@@ -106,22 +106,12 @@
 </main>
 
 <style>
-  :global(body) {
-    margin: 0;
-    padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      sans-serif;
-    background: #f8fafc;
-    color: #1e293b;
-  }
-
   .app {
     min-height: 100vh;
   }
 
   .app-header {
-    background: white;
-    color: black;
+    background: var(--white-background);
     padding: 2rem 0;
     text-align: center;
   }
@@ -153,7 +143,7 @@
   }
 
   .error-banner {
-    background: #fee2e2;
+    background: var(--warning-background);
     border: 1px solid #fecaca;
     border-radius: 8px;
     padding: 1rem;
@@ -161,7 +151,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    color: #dc2626;
+    color: var(--warning);
   }
 
   .error-banner i {
@@ -175,7 +165,7 @@
   .error-banner button {
     background: none;
     border: none;
-    color: #dc2626;
+    color: var(--warning);
     cursor: pointer;
     padding: 0.25rem;
     border-radius: 4px;
@@ -192,7 +182,7 @@
   }
 
   .upload-section {
-    background: white;
+    background: var(--white-background);
     border-radius: 16px;
     padding: 2rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
@@ -200,7 +190,7 @@
 
   .result-section,
   .history-section {
-    background: white;
+    background: var(--white-background);
     border-radius: 16px;
     padding: 2rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
@@ -227,7 +217,7 @@
     padding: 1rem;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
-    background: #fafafa;
+    background: var(--white-background);
   }
 
   .job-info {
@@ -273,8 +263,8 @@
   }
 
   .status-error {
-    background: #fee2e2;
-    color: #dc2626;
+    background: var(--warning-background);
+    color: var(--warning);
   }
 
   .job-actions {
@@ -298,7 +288,7 @@
 
   .view-btn {
     background: #3b82f6;
-    color: white;
+    color: var(--white-background);
   }
 
   .view-btn:hover {
@@ -306,13 +296,13 @@
   }
 
   .delete-btn {
-    background: #f3f4f6;
+    background: var(--white-background);
     color: #6b7280;
   }
 
   .delete-btn:hover {
-    background: #fee2e2;
-    color: #dc2626;
+    background: var(--warning-background);
+    color: var(--warning);
   }
 
   @media (max-width: 768px) {

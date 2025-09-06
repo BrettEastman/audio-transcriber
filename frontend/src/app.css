@@ -3,8 +3,11 @@
 :root {
   --primary: #5c73c4;
   --primary-dark: #1d4ed8;
-  --secondary: #a7393d;
-  --secondary-dark: #7c2d32;
+  --warning: #a7393d;
+  --warning-dark: #7c2d32;
+  --warning-background: #fee2e2;
+  --background: aliceblue;
+  --white-background: #fbfdff;
 }
 
 /* Use a more-intuitive box-sizing model.*/
@@ -29,7 +32,7 @@ body {
   -webkit-font-smoothing: antialiased;
   font-family: "Courier New", Courier, "Lucida Sans Typewriter",
     "Lucida Typewriter", monospace;
-  background-color: aliceblue;
+  background-color: var(--background);
 }
 
 /* Improve media defaults */
