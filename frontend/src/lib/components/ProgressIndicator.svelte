@@ -105,7 +105,7 @@
 
   .file-info i {
     font-size: 1.5rem;
-    color: #3b82f6;
+    color: var(--dashed-border-hover);
     flex-shrink: 0;
   }
 
@@ -152,7 +152,7 @@
   }
 
   .language-badge {
-    background: #3b82f6;
+    background: var(--dashed-border-hover);
     color: white;
     padding: 0.25rem 0.75rem;
     border-radius: 6px;
@@ -177,7 +177,7 @@
 
   .progress-fill {
     height: 100%;
-    background: #3b82f6;
+    background: var(--dashed-border-hover);
     border-radius: 4px;
     transition: width 0.3s ease;
     background-image: linear-gradient(

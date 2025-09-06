@@ -207,7 +207,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--dashed-border);
     border-radius: 8px;
     background: white;
     color: #374151;
@@ -223,9 +223,9 @@
   }
 
   .action-btn.toggle {
-    background: #3b82f6;
+    background: var(--dashed-border-hover);
     color: white;
-    border-color: #3b82f6;
+    border-color: var(--dashed-border-hover);
   }
 
   .action-btn.toggle:hover {

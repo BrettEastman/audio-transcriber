@@ -145,7 +145,7 @@
 
   .language-selector select {
     padding: 0.5rem;
-    border: 2px solid #d1d5db;
+    border: 2px solid var(--dashed-border);
     border-radius: 8px;
     background: white;
     font-size: 0.875rem;
@@ -154,11 +154,11 @@
 
   .language-selector select:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: var(--dashed-border-hover);
   }
 
   .drop-zone {
-    border: 3px dashed #d1d5db;
+    border: 3px dashed var(--dashed-border);
     border-radius: 12px;
     padding: 3rem 2rem;
     text-align: center;
@@ -168,12 +168,12 @@
   }
 
   .drop-zone:hover {
-    border-color: #3b82f6;
+    border-color: var(--dashed-border-hover);
     background: #f0f9ff;
   }
 
   .drop-zone.drag-over {
-    border-color: #3b82f6;
+    border-color: var(--dashed-border-hover);
     background: #eff6ff;
     transform: scale(1.02);
   }
@@ -193,7 +193,7 @@
 
   .drop-zone:hover .upload-icon,
   .drop-zone.drag-over .upload-icon {
-    color: #3b82f6;
+    color: var(--dashed-border-hover);
   }
 
   .drop-content h3 {

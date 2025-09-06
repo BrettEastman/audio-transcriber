@@ -287,7 +287,7 @@
   }
 
   .view-btn {
-    background: #3b82f6;
+    background: var(--dashed-border-hover);
     color: var(--white-background);
   }
 

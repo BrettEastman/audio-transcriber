@@ -1,13 +1,13 @@
 /* Based on Josh W. Comeau's custom CSS reset: https://www.joshwcomeau.com/css/custom-css-reset/ */
 
 :root {
-  --primary: #5c73c4;
-  --primary-dark: #1d4ed8;
+  --background: aliceblue;
+  --white-background: #fbfdff;
+  --dashed-border: #d1d5db;
+  --dashed-border-hover: #3b82f6;
   --warning: #a7393d;
   --warning-dark: #7c2d32;
   --warning-background: #fee2e2;
-  --background: aliceblue;
-  --white-background: #fbfdff;
 }
 
 /* Use a more-intuitive box-sizing model.*/
