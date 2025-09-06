@@ -120,8 +120,8 @@
   }
 
   .app-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: white;
+    color: black;
     padding: 2rem 0;
     text-align: center;
   }
