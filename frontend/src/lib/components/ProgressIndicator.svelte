@@ -148,7 +148,7 @@
   .status-text {
     margin: 0.25rem 0 0 0;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--upload-icon);
   }
 
   .language-badge {

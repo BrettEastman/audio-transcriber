@@ -229,7 +229,7 @@
 
   .job-info i {
     font-size: 1.25rem;
-    color: #6b7280;
+    color: var(--upload-icon);
   }
 
   .job-info h4 {
@@ -292,12 +292,12 @@
   }
 
   .view-btn:hover {
-    background: #2563eb;
+    background: var(--dashed-border-hover);
   }
 
   .delete-btn {
     background: var(--white-background);
-    color: #6b7280;
+    color: var(--upload-icon);
   }
 
   .delete-btn:hover {

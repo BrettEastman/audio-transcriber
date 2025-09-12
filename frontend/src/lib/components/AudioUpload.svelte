@@ -187,7 +187,7 @@
 
   .upload-icon {
     font-size: 3rem;
-    color: #6b7280;
+    color: var(--upload-icon);
     transition: color 0.3s ease;
   }
 
@@ -205,7 +205,7 @@
 
   .drop-content p {
     margin: 0;
-    color: #6b7280;
+    color: var(--upload-icon);
     font-size: 1rem;
   }
 

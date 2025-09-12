@@ -193,7 +193,7 @@
 
   .language {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--upload-icon);
   }
 
   .actions {
@@ -277,7 +277,7 @@
   .timestamp {
     flex-shrink: 0;
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--upload-icon);
     background: #f3f4f6;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
