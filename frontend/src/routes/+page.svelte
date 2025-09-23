@@ -1,12 +1,61 @@
+<!-- src/routes/+page.svelte -->
 <script lang="ts">
   import AudioUpload from "$lib/components/AudioUpload.svelte";
   import ProgressIndicator from "$lib/components/ProgressIndicator.svelte";
   import TranscriptionResult from "$lib/components/TranscriptionResult.svelte";
   import { transcriptionStore } from "$lib/stores/transcription";
+  import { onMount } from "svelte";
 
-  // Subscribe to store values
-  $: ({ jobs, currentJob, isUploading, uploadProgress, error } =
-    $transcriptionStore);
+  // Reactive references to store values using Svelte 5 syntax
+  let storeState = $derived($transcriptionStore);
+  let jobs = $derived(storeState.jobs);
+  let currentJob = $derived(storeState.currentJob);
+  let isUploading = $derived(storeState.isUploading);
+  let uploadProgress = $derived(storeState.uploadProgress);
+  let error = $derived(storeState.error);
+
+  let isBackendReady = $state(false);
+  let isCheckingBackend = $state(true);
+
+  // Check if backend is ready
+  async function checkBackendHealth() {
+    try {
+      const response = await fetch("http://localhost:8000/health");
+      if (response.ok) {
+        const data = await response.json();
+        return data.model_loaded;
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // Poll backend until it's ready
+  async function waitForBackend() {
+    isCheckingBackend = true;
+    let attempts = 0;
+    const maxAttempts = 30; // 30 seconds timeout
+
+    while (attempts < maxAttempts) {
+      const ready = await checkBackendHealth();
+      if (ready) {
+        isBackendReady = true;
+        isCheckingBackend = false;
+        return;
+      }
+
+      attempts++;
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second
+    }
+
+    isCheckingBackend = false;
+    // Backend didn't start - could show an error message
+  }
+
+  onMount(() => {
+    waitForBackend();
+  });
 
   function handleJobDelete(jobId: string) {
     transcriptionStore.deleteJob(jobId);
@@ -33,79 +82,114 @@
   </header>
 
   <div class="container">
-    {#if error}
-      <div class="error-banner">
-        <i class="ri-error-warning-line"></i>
-        <span>{error}</span>
-        <button onclick={() => transcriptionStore.clearError()}>
-          <i class="ri-close-line"></i>
-        </button>
+    {#if isCheckingBackend}
+      <div class="loading-screen">
+        <div class="loading-content">
+          <div class="spinner">
+            <i class="ri-loader-4-line"></i>
+          </div>
+          <h2>Starting Audio Transcriber</h2>
+          <p>Loading Whisper AI model... This may take a moment.</p>
+        </div>
       </div>
-    {/if}
-
-    <div class="main-content">
-      <section class="upload-section">
-        <AudioUpload />
-
-        {#if isUploading || (currentJob && currentJob.status !== "completed")}
-          {#if currentJob}
-            <ProgressIndicator job={currentJob} {uploadProgress} />
-          {/if}
-        {/if}
-      </section>
-
-      {#if currentJob && currentJob.status === "completed"}
-        <section class="result-section">
-          <h2>Latest Transcription</h2>
-          <TranscriptionResult
-            job={currentJob}
-            onDelete={() => handleJobDelete(currentJob.job_id)}
-          />
-        </section>
+    {:else if !isBackendReady}
+      <div class="error-screen">
+        <div class="error-content">
+          <i class="ri-error-warning-line"></i>
+          <h2>Backend Not Available</h2>
+          <p>Please make sure the backend server is running.</p>
+          <button onclick={() => waitForBackend()} class="retry-btn">
+            <i class="ri-refresh-line"></i>
+            Retry
+          </button>
+        </div>
+      </div>
+    {:else}
+      {#if error}
+        <div class="error-banner">
+          <i class="ri-error-warning-line"></i>
+          <span>{error}</span>
+          <button onclick={() => transcriptionStore.clearError()}>
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
       {/if}
 
-      {#if jobs.length > 1}
-        <section class="history-section">
-          <h2>Recent Transcriptions</h2>
-          <div class="job-list">
-            {#each jobs.slice(1) as job (job.job_id)}
-              <div class="job-item">
-                <div class="job-info">
-                  <i class="ri-file-text-line"></i>
-                  <div>
-                    <h4>{job.filename || "Audio File"}</h4>
-                    <span class="status status-{job.status}">{job.status}</span>
+      <div class="main-content">
+        <section class="upload-section">
+          <AudioUpload />
+
+          {#if isUploading || (currentJob && currentJob.status !== "completed")}
+            {#if currentJob}
+              <ProgressIndicator job={currentJob} {uploadProgress} />
+            {/if}
+          {/if}
+        </section>
+
+        {#if currentJob && currentJob.status === "completed"}
+          <section class="result-section">
+            <h2>Latest Transcription</h2>
+            <TranscriptionResult
+              job={currentJob}
+              onDelete={() => handleJobDelete(currentJob.job_id)}
+            />
+          </section>
+        {/if}
+
+        {#if jobs.length > 1}
+          <section class="history-section">
+            <h2>Recent Transcriptions</h2>
+            <div class="job-list">
+              {#each jobs.slice(1) as job (job.job_id)}
+                <div class="job-item">
+                  <div class="job-info">
+                    <i class="ri-file-text-line"></i>
+                    <div>
+                      <h4>{job.filename || "Audio File"}</h4>
+                      <span class="status status-{job.status}"
+                        >{job.status}</span
+                      >
+                    </div>
+                  </div>
+
+                  <div class="job-actions">
+                    {#if job.status === "completed"}
+                      <button
+                        class="view-btn"
+                        onclick={() => transcriptionStore.setCurrentJob(job)}
+                      >
+                        <i class="ri-eye-line"></i>
+                        View
+                      </button>
+                    {/if}
+
+                    <button
+                      class="delete-btn"
+                      onclick={() => handleJobDelete(job.job_id)}
+                    >
+                      <i class="ri-delete-bin-line"></i>
+                    </button>
                   </div>
                 </div>
-
-                <div class="job-actions">
-                  {#if job.status === "completed"}
-                    <button
-                      class="view-btn"
-                      onclick={() => transcriptionStore.setCurrentJob(job)}
-                    >
-                      <i class="ri-eye-line"></i>
-                      View
-                    </button>
-                  {/if}
-
-                  <button
-                    class="delete-btn"
-                    onclick={() => handleJobDelete(job.job_id)}
-                  >
-                    <i class="ri-delete-bin-line"></i>
-                  </button>
-                </div>
-              </div>
-            {/each}
-          </div>
-        </section>
-      {/if}
-    </div>
+              {/each}
+            </div>
+          </section>
+        {/if}
+      </div>
+    {/if}
   </div>
 </main>
 
 <style>
+  :global(body) {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+  }
+
   .app {
     min-height: 100vh;
   }
@@ -328,6 +412,15 @@
 
     .job-actions {
       align-self: flex-end;
+    }
+
+    .loading-content,
+    .error-content {
+      padding: 1rem;
+    }
+
+    .spinner i {
+      font-size: 2.5rem;
     }
   }
 </style>

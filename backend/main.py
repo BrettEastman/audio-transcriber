@@ -14,12 +14,49 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Audio Transcription API", version="1.0.0")
+import signal
+import sys
+from contextlib import asynccontextmanager
+
+# Store background tasks for cleanup
+background_tasks_set = set()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan"""
+    # Startup
+    global model
+    logger.info(f"Loading Whisper model: {MODEL_SIZE}")
+    model = whisper.load_model(MODEL_SIZE)
+    logger.info("Model loaded successfully!")
+
+    yield
+
+    # Shutdown - cleanup background tasks
+    logger.info("Shutting down server...")
+    for task in background_tasks_set:
+        if not task.done():
+            task.cancel()
+
+    # Wait for tasks to finish
+    if background_tasks_set:
+        await asyncio.gather(*background_tasks_set, return_exceptions=True)
+
+    logger.info("Server shutdown complete")
+
+app = FastAPI(title="Audio Transcription API", version="1.0.0", lifespan=lifespan)
 
 # Enable CORS for your frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"],  # Add your frontend URLs
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "tauri://localhost",
+        "http://tauri.localhost",
+        "https://tauri.localhost"
+    ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -41,13 +78,8 @@ class TranscriptionResponse(BaseModel):
     language: Optional[str] = None
     error: Optional[str] = None
 
-@app.on_event("startup")
-async def startup_event():
-    """Load the Whisper model on startup"""
-    global model
-    logger.info(f"Loading Whisper model: {MODEL_SIZE}")
-    model = whisper.load_model(MODEL_SIZE)
-    logger.info("Model loaded successfully!")
+# Remove the old startup event
+# @app.on_event("startup") - this is replaced by lifespan
 
 @app.get("/")
 async def root():
@@ -94,7 +126,6 @@ async def transcribe_audio_task(job_id: str, file_path: str, language: Optional[
 
 @app.post("/transcribe", response_model=TranscriptionResponse)
 async def transcribe_audio(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     language: Optional[str] = None
 ):
@@ -134,13 +165,10 @@ async def transcribe_audio(
             "language": language
         }
 
-        # Start background transcription
-        background_tasks.add_task(
-            transcribe_audio_task,
-            job_id,
-            temp_file_path,
-            language
-        )
+        # Start background transcription and track the task
+        task = asyncio.create_task(transcribe_audio_task(job_id, temp_file_path, language))
+        background_tasks_set.add(task)
+        task.add_done_callback(background_tasks_set.discard)
 
         return TranscriptionResponse(
             job_id=job_id,
@@ -187,6 +215,16 @@ async def get_available_models():
     }
     return models_info
 
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully"""
+    logger.info(f"Received signal {signum}, shutting down gracefully...")
+    sys.exit(0)
+
 if __name__ == "__main__":
     import uvicorn
+
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
