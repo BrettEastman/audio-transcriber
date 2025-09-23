@@ -1,7 +1,6 @@
 <!-- src/routes/+page.svelte -->
 <script lang="ts">
   import AudioUpload from "$lib/components/AudioUpload.svelte";
-  import ProgressIndicator from "$lib/components/ProgressIndicator.svelte";
   import TranscriptionResult from "$lib/components/TranscriptionResult.svelte";
   import { transcriptionStore } from "$lib/stores/transcription";
   import { onMount } from "svelte";
@@ -119,11 +118,6 @@
         <section class="upload-section">
           <AudioUpload />
 
-          {#if isUploading || (currentJob && currentJob.status !== "completed")}
-            {#if currentJob}
-              <ProgressIndicator job={currentJob} {uploadProgress} />
-            {/if}
-          {/if}
         </section>
 
         {#if currentJob && currentJob.status === "completed"}

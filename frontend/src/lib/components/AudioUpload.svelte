@@ -1,5 +1,7 @@
 <script lang="ts">
   import { transcriptionStore } from "../stores/transcription.js";
+  let storeState = $derived($transcriptionStore);
+  let isUploading = $derived(storeState.isUploading);
   import { SUPPORTED_AUDIO_FORMATS } from "../../../../shared/types.js";
 
   let isDragOver = $state(false);
@@ -106,7 +108,10 @@
     onkeydown={(e) => e.key === "Enter" && triggerFileSelect()}
   >
     <div class="drop-content">
-      <i class="ri-upload-cloud-2-line upload-icon"></i>
+      <i
+        class="ri-upload-cloud-2-line upload-icon"
+        class:uploading={isUploading}
+      ></i>
       <h3>Upload Audio File</h3>
       <p>Drag and drop your audio file here, or click to browse</p>
       <div class="supported-formats">
@@ -194,6 +199,26 @@
   .drop-zone:hover .upload-icon,
   .drop-zone.drag-over .upload-icon {
     color: var(--dashed-border-hover);
+  }
+
+  .upload-icon.uploading {
+    color: var(--dashed-border-hover);
+    animation: pulse 2s linear infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      color: var(--dashed-border);
+    }
+    50% {
+      transform: scale(1.02);
+      color: var(--dashed-border-hover);
+    }
+    100% {
+      transform: scale(1);
+      color: var(--dashed-border);
+    }
   }
 
   .drop-content h3 {
