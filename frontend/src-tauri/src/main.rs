@@ -13,7 +13,7 @@ fn start_backend(app_handle: AppHandle) -> Result<String, String> {
 
     let sidecar_command = app_handle.shell().sidecar("main")
         .map_err(|e| format!("Failed to create sidecar command: {}", e))?;
-    
+
     let (mut rx, child) = sidecar_command
         .spawn()
         .map_err(|e| format!("Failed to spawn backend sidecar: {}", e))?;
@@ -40,6 +40,10 @@ fn start_backend(app_handle: AppHandle) -> Result<String, String> {
                 CommandEvent::Terminated(payload) => {
                     println!("Backend terminated with code: {:?}", payload.code);
                     break;
+                }
+                _ => {
+                    // Handle any future CommandEvent variants
+                    println!("Received unknown command event");
                 }
             }
         }
@@ -69,7 +73,7 @@ fn main() {
                 let backend_state: tauri::State<BackendProcess> = app_handle.state();
                 let mutex = &backend_state.0;
                 let mut guard = mutex.lock().unwrap();
-                if let Some(mut child) = guard.take() {
+                if let Some(child) = guard.take() {
                     let _ = child.kill();
                 }
             }
@@ -77,3 +81,5 @@ fn main() {
         .invoke_handler(tauri::generate_handler![start_backend])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+
+}
