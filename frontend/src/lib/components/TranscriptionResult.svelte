@@ -22,7 +22,17 @@
   function downloadTranscript() {
     if (!job.text) return;
 
-    const blob = new Blob([job.text], { type: "text/plain" });
+    let content = job.text;
+    if (showSegments && job.segments) {
+      content = job.segments
+        .map(
+          (segment) =>
+            `[${formatTime(segment.start)} - ${formatTime(segment.end)}] ${segment.text.trim()}`
+        )
+        .join("\n");
+    }
+
+    const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -39,34 +49,6 @@
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   }
 
-  function downloadSRT() {
-    if (!job.segments) return;
-
-    let srtContent = "";
-    job.segments.forEach((segment, index) => {
-      const startTime = formatSRTTime(segment.start);
-      const endTime = formatSRTTime(segment.end);
-      srtContent += `${index + 1}\n${startTime} --> ${endTime}\n${segment.text.trim()}\n\n`;
-    });
-
-    const blob = new Blob([srtContent], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${job.filename?.replace(/\.[^/.]+$/, "") || "transcript"}.srt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function formatSRTTime(seconds: number): string {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    const ms = Math.floor((seconds % 1) * 1000);
-    return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")},${ms.toString().padStart(3, "0")}`;
-  }
 </script>
 
 {#if job.status === "completed" && job.text}
@@ -95,21 +77,13 @@
         <button
           class="action-btn"
           onclick={downloadTranscript}
-          title="Download as text"
+          title={showSegments ? "Download segments as text" : "Download as text"}
         >
           <i class="ri-download-line"></i>
-          TXT
+          Download
         </button>
 
         {#if job.segments && job.segments.length > 0}
-          <button
-            class="action-btn"
-            onclick={downloadSRT}
-            title="Download as SRT subtitle"
-          >
-            <i class="ri-download-line"></i>
-            SRT
-          </button>
 
           <button
             class="action-btn toggle"
