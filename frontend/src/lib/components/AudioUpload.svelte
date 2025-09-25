@@ -1,10 +1,10 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+  import { SUPPORTED_AUDIO_FORMATS } from "../../../../shared/types.js";
   import { transcriptionStore } from "../stores/transcription.js";
+
   let storeState = $derived($transcriptionStore);
   let isUploading = $derived(storeState.isUploading);
-  import { SUPPORTED_AUDIO_FORMATS } from "../../../../shared/types.js";
-  import { onMount } from "svelte";
-
   let isDragOver = $state(false);
   let fileInput: HTMLInputElement;
   let selectedLanguage = $state<string>("");
@@ -199,7 +199,7 @@
         class="ri-upload-cloud-2-line upload-icon"
         class:uploading={isUploading}
       ></i>
-      <h3>Upload Audio File</h3>
+      <h3>{!isUploading ? "Upload Audio File" : "Uploading..."}</h3>
       <p>Drag and drop your audio file here, or click to browse</p>
       <div class="supported-formats">
         <small>Supports: MP3, WAV, M4A, MP4, and more</small>
@@ -290,7 +290,7 @@
 
   .upload-icon.uploading {
     color: var(--dashed-border-hover);
-    animation: pulse 2s linear infinite;
+    animation: pulse 1.5s linear infinite;
   }
 
   @keyframes pulse {
@@ -299,8 +299,8 @@
       color: var(--dashed-border);
     }
     50% {
-      transform: scale(1.02);
-      color: var(--dashed-border-hover);
+      transform: scale(1.05);
+      color: var(--pulse-dark);
     }
     100% {
       transform: scale(1);
