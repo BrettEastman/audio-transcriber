@@ -9,8 +9,6 @@
   let storeState = $derived($transcriptionStore);
   let jobs = $derived(storeState.jobs);
   let currentJob = $derived(storeState.currentJob);
-  let isUploading = $derived(storeState.isUploading);
-  let uploadProgress = $derived(storeState.uploadProgress);
   let error = $derived(storeState.error);
 
   let isBackendReady = $state(false);
@@ -108,7 +106,10 @@
         <div class="error-banner">
           <i class="ri-error-warning-line"></i>
           <span>{error}</span>
-          <button onclick={() => transcriptionStore.clearError()}>
+          <button
+            aria-label="Close"
+            onclick={() => transcriptionStore.clearError()}
+          >
             <i class="ri-close-line"></i>
           </button>
         </div>
@@ -117,7 +118,6 @@
       <div class="main-content">
         <section class="upload-section">
           <AudioUpload />
-
         </section>
 
         {#if currentJob && currentJob.status === "completed"}
@@ -158,6 +158,7 @@
                     {/if}
 
                     <button
+                      aria-label="Delete"
                       class="delete-btn"
                       onclick={() => handleJobDelete(job.job_id)}
                     >
@@ -189,7 +190,7 @@
   }
 
   .app-header {
-    background: var(--white-background);
+    background: var(--white-bg);
     padding: 2rem 0;
     text-align: center;
   }

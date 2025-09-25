@@ -24,7 +24,11 @@ function createTranscriptionStore() {
   return {
     subscribe,
 
-    async uploadFile(file: File, language?: string) {
+    async uploadFile(
+      file: File,
+      language?: string,
+      onXhrReady?: (xhr: XMLHttpRequest) => void
+    ) {
       update((state) => ({
         ...state,
         isUploading: true,
@@ -38,7 +42,8 @@ function createTranscriptionStore() {
           language,
           (progress) => {
             update((state) => ({ ...state, uploadProgress: progress }));
-          }
+          },
+          onXhrReady
         );
 
         update((state) => ({
@@ -121,6 +126,15 @@ function createTranscriptionStore() {
 
     setCurrentJob(job: TranscriptionJob | null) {
       update((state) => ({ ...state, currentJob: job }));
+    },
+
+    cancelUpload() {
+      update((state) => ({
+        ...state,
+        isUploading: false,
+        uploadProgress: 0,
+        error: null,
+      }));
     },
 
     clearError() {

@@ -8,6 +8,7 @@
   let isDragOver = $state(false);
   let fileInput: HTMLInputElement;
   let selectedLanguage = $state<string>("");
+  let currentXhr: XMLHttpRequest | null = null;
 
   const languages = [
     { code: "", name: "Auto-detect" },
@@ -45,12 +46,26 @@
     );
 
     try {
-      await transcriptionStore.uploadFile(file, selectedLanguage || undefined);
+      await transcriptionStore.uploadFile(
+        file,
+        selectedLanguage || undefined,
+        (xhr) => {
+          currentXhr = xhr;
+        }
+      );
     } catch (error) {
+      // Check if it was cancelled
+      if (error instanceof Error && error.message.includes("abort")) {
+        console.log("Upload cancelled by user");
+        return;
+      }
+
       console.error("Upload failed:", error);
       alert(
         `Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`
       );
+    } finally {
+      currentXhr = null;
     }
   }
 
@@ -84,6 +99,15 @@
 
   function triggerFileSelect() {
     fileInput.click();
+  }
+
+  function cancelUpload(event: Event) {
+    event.stopPropagation(); // Prevent triggering the drop zone click
+    if (currentXhr) {
+      currentXhr.abort();
+      currentXhr = null;
+    }
+    transcriptionStore.cancelUpload();
   }
 
   // Handle Tauri file drop events
@@ -189,7 +213,7 @@
     ondrop={handleDrop}
     ondragover={handleDragOver}
     ondragleave={handleDragLeave}
-    onclick={triggerFileSelect}
+    onclick={isUploading ? undefined : triggerFileSelect}
     role="button"
     tabindex="0"
     onkeydown={(e) => e.key === "Enter" && triggerFileSelect()}
@@ -199,11 +223,22 @@
         class="ri-upload-cloud-2-line upload-icon"
         class:uploading={isUploading}
       ></i>
-      <h3>{!isUploading ? "Upload Audio File" : "Uploading..."}</h3>
-      <p>Drag and drop your audio file here, or click to browse</p>
-      <div class="supported-formats">
-        <small>Supports: MP3, WAV, M4A, MP4, and more</small>
-      </div>
+      <h3>{!isUploading ? "Transcribe Audio File" : "Transcribing..."}</h3>
+
+      {#if isUploading}
+        <div class="upload-progress">
+          <p>Uploading your file...</p>
+          <button class="cancel-btn" onclick={(e) => cancelUpload(e)}>
+            <i class="ri-close-line"></i>
+            Cancel
+          </button>
+        </div>
+      {:else}
+        <p>Drag and drop your audio file here, or click to browse</p>
+        <div class="supported-formats">
+          <small>Supports: MP3, WAV, M4A, MP4, and more</small>
+        </div>
+      {/if}
     </div>
   </div>
 
@@ -232,14 +267,14 @@
 
   .language-selector label {
     font-weight: 500;
-    color: #374151;
+    color: var(--blue-dark);
   }
 
   .language-selector select {
     padding: 0.5rem;
     border: 2px solid var(--dashed-border);
     border-radius: 8px;
-    background: white;
+    background: var(--white-background);
     font-size: 0.875rem;
     cursor: pointer;
   }
@@ -256,17 +291,21 @@
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: #fafafa;
+    background: var(--white-background);
+  }
+
+  .drop-zone:has(.upload-progress) {
+    cursor: default;
   }
 
   .drop-zone:hover {
     border-color: var(--dashed-border-hover);
-    background: #f0f9ff;
+    background: var(--background);
   }
 
   .drop-zone.drag-over {
     border-color: var(--dashed-border-hover);
-    background: #eff6ff;
+    background: var(--background);
     transform: scale(1.02);
   }
 
@@ -312,7 +351,7 @@
     margin: 0;
     font-size: 1.5rem;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--blue-dark);
   }
 
   .drop-content p {
@@ -326,8 +365,38 @@
   }
 
   .supported-formats small {
-    color: #9ca3af;
+    color: var(--upload-icon);
     font-size: 0.75rem;
+  }
+
+  .upload-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .cancel-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--warning-background);
+    color: var(--blue-dark);
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .cancel-btn:hover {
+    background: var(--warning-light);
+  }
+
+  .cancel-btn:active {
+    transform: translateY(1px);
   }
 
   @media (max-width: 640px) {

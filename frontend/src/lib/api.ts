@@ -35,7 +35,8 @@ export class TranscriptionAPI {
   static async uploadAudio(
     file: File,
     language?: string,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    onXhrReady?: (xhr: XMLHttpRequest) => void
   ): Promise<TranscriptionJob> {
     const formData = new FormData();
     formData.append("file", file);
@@ -46,6 +47,9 @@ export class TranscriptionAPI {
     // Create XMLHttpRequest for progress tracking
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
+
+      // Provide xhr reference to caller for cancellation
+      onXhrReady?.(xhr);
 
       xhr.upload.addEventListener("progress", (event) => {
         if (event.lengthComputable && onProgress) {

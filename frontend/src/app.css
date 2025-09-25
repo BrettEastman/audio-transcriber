@@ -3,11 +3,14 @@
 :root {
   --background: aliceblue;
   --white-background: #fbfdff;
+  --white-bg: #f1f4fa;
   --dashed-border: #d1d5db;
   --dashed-border-hover: #3b82f6;
   --pulse-dark: #1d4b94;
+  --blue-dark: #1f2937;
   --upload-icon: #6b7280;
   --warning: #a7393d;
+  --warning-light: #fb8488;
   --warning-dark: #7c2d32;
   --warning-background: #fee2e2;
 }
