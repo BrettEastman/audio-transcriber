@@ -48,7 +48,6 @@
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   }
-
 </script>
 
 {#if job.status === "completed" && job.text}
@@ -77,14 +76,15 @@
         <button
           class="action-btn"
           onclick={downloadTranscript}
-          title={showSegments ? "Download segments as text" : "Download as text"}
+          title={showSegments
+            ? "Download segments as text"
+            : "Download as text"}
         >
           <i class="ri-download-line"></i>
           Download
         </button>
 
         {#if job.segments && job.segments.length > 0}
-
           <button
             class="action-btn toggle"
             onclick={() => (showSegments = !showSegments)}
@@ -130,8 +130,8 @@
 
 <style>
   .result-container {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--white-background);
+    border: 1px solid var(--result-container-border);
     border-radius: 12px;
     margin: 1rem 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -143,8 +143,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem;
-    border-bottom: 1px solid #f3f4f6;
-    background: #f9fafb;
+    border-bottom: 1px solid var(--result-header-dark);
+    background: var(--white-bg-darker);
   }
 
   .file-info {
@@ -155,14 +155,14 @@
 
   .file-info i {
     font-size: 1.5rem;
-    color: #10b981;
+    color: var(--file-info);
   }
 
   .file-info h3 {
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--blue-dark);
   }
 
   .language {
@@ -223,12 +223,13 @@
 
   .text-view {
     padding: 1.5rem;
+    background: var(--white-background);
   }
 
   .text-view p {
     margin: 0;
     line-height: 1.6;
-    color: #374151;
+    color: var(--blue-dark);
     font-size: 1rem;
     white-space: pre-wrap;
   }

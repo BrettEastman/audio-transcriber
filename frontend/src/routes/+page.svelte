@@ -181,8 +181,8 @@
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       sans-serif;
-    background: #f8fafc;
-    color: #1e293b;
+    background: var(--white-background);
+    color: var(--blue-dark);
   }
 
   .app {
@@ -190,7 +190,7 @@
   }
 
   .app-header {
-    background: var(--white-bg);
+    background: var(--white-bg-darker);
     padding: 2rem 0;
     text-align: center;
   }

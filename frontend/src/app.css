@@ -3,7 +3,10 @@
 :root {
   --background: aliceblue;
   --white-background: #fbfdff;
-  --white-bg: #f1f4fa;
+  --white-bg-darker: #f4f5fa;
+  --result-header: #f9fafb;
+  --result-header-dark: #f3f4f6;
+  --result-container-border: #e5e7eb;
   --dashed-border: #d1d5db;
   --dashed-border-hover: #3b82f6;
   --pulse-dark: #1d4b94;
@@ -13,6 +16,7 @@
   --warning-light: #fb8488;
   --warning-dark: #7c2d32;
   --warning-background: #fee2e2;
+  --file-info: #10b981;
 }
 
 /* Use a more-intuitive box-sizing model.*/
