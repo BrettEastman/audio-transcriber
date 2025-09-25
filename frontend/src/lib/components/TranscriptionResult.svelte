@@ -208,13 +208,14 @@
   }
 
   .action-btn.danger {
-    color: var(--warning-background);
+    color: var(--warning-mid);
     border-color: var(--warning-light);
   }
 
   .action-btn.danger:hover {
+    color: var(--white-bg-darker);
     background: var(--warning-light);
-    border-color: var(--warning-background);
+    border-color: var(--white-bg-darker);
   }
 
   .transcript-content {
