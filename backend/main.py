@@ -9,10 +9,46 @@ from typing import Optional, Dict
 import asyncio
 from pydantic import BaseModel
 import logging
+import sys
 
-# Configure logging
+# Configure logging EARLY (before any logging calls)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Set Whisper cache directory to a writable location
+cache_dir = os.path.expanduser('~/.cache/whisper')
+os.makedirs(cache_dir, exist_ok=True)
+os.environ['XDG_CACHE_HOME'] = os.path.expanduser('~/.cache')
+os.environ['WHISPER_CACHE'] = cache_dir
+logger.info(f"Whisper cache directory set to: {cache_dir}")
+
+# Handle PyInstaller bundled assets
+if getattr(sys, 'frozen', False):
+    # Running in a PyInstaller bundle
+    bundle_dir = sys._MEIPASS
+    logger.info(f"Running in PyInstaller bundle, bundle dir: {bundle_dir}")
+
+    whisper_assets_path = os.path.join(bundle_dir, 'whisper', 'assets')
+    logger.info(f"Looking for Whisper assets at: {whisper_assets_path}")
+
+    if os.path.exists(whisper_assets_path):
+        # Set environment variable to point to bundled assets
+        os.environ['WHISPER_ASSETS_PATH'] = whisper_assets_path
+        logger.info(f"Using bundled Whisper assets from: {whisper_assets_path}")
+    else:
+        logger.warning(f"Bundled Whisper assets not found at: {whisper_assets_path}")
+        if os.path.exists(bundle_dir):
+            bundle_contents = os.listdir(bundle_dir)
+            logger.info(f"Available files in bundle: {bundle_contents}")
+            # Check if whisper directory exists
+            whisper_dir = os.path.join(bundle_dir, 'whisper')
+            if os.path.exists(whisper_dir):
+                whisper_contents = os.listdir(whisper_dir)
+                logger.info(f"Contents of whisper directory: {whisper_contents}")
+        else:
+            logger.error(f"Bundle directory does not exist: {bundle_dir}")
+else:
+    logger.info("Running in development mode")
 
 import signal
 import sys
@@ -27,8 +63,29 @@ async def lifespan(app: FastAPI):
     # Startup
     global model
     logger.info(f"Loading Whisper model: {MODEL_SIZE}")
-    model = whisper.load_model(MODEL_SIZE)
-    logger.info("Model loaded successfully!")
+
+    # Ensure cache directory exists and is writable
+    cache_dir = os.path.expanduser('~/.cache/whisper')
+    os.makedirs(cache_dir, exist_ok=True)
+    logger.info(f"Whisper cache directory: {cache_dir}")
+
+    # Set download root for Whisper models
+    try:
+        model = whisper.load_model(MODEL_SIZE, download_root=cache_dir)
+        logger.info("Model loaded successfully!")
+    except Exception as e:
+        logger.error(f"Failed to load model: {e}")
+        # Try loading without specifying download_root
+        try:
+            model = whisper.load_model(MODEL_SIZE)
+            logger.info("Model loaded successfully (fallback)!")
+        except Exception as e2:
+            logger.error(f"Failed to load model even with fallback: {e2}")
+            raise e2
+
+    # Log presence of mel filter assets (debug)
+    mel_path = os.path.join(os.path.dirname(whisper.__file__), "assets", "mel_filters.npz")
+    logger.info(f"Whisper mel_filters path: {mel_path}; exists={os.path.exists(mel_path)}")
 
     yield
 
@@ -97,6 +154,10 @@ async def transcribe_audio_task(job_id: str, file_path: str, language: Optional[
     try:
         logger.info(f"Starting transcription for job {job_id}")
         transcription_jobs[job_id]["status"] = "processing"
+
+        # Extra debug: confirm assets path exists at transcription time
+        mel_path = os.path.join(os.path.dirname(whisper.__file__), "assets", "mel_filters.npz")
+        logger.info(f"[Transcribe] mel_filters path: {mel_path}; exists={os.path.exists(mel_path)}")
 
         # Transcribe the audio
         result = model.transcribe(

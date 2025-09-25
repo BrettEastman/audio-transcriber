@@ -112,12 +112,17 @@
 
   // Handle Tauri file drop events
   onMount(() => {
+    console.log("AudioUpload component mounted");
+
     // Check if we're running in Tauri
     const setupTauriListeners = async () => {
       try {
+        console.log("Attempting to import Tauri API...");
         const { listen } = await import("@tauri-apps/api/event");
 
-        console.log("Running in Tauri, setting up file drop listener");
+        console.log(
+          "Successfully imported Tauri API, setting up file drop listener"
+        );
 
         // Listen for file drop events
         const unlisten = await listen("tauri://file-drop", (event) => {

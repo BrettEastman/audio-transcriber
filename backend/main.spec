@@ -1,11 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import collect_data_files
+
+# Robustly collect Whisper package data (e.g., assets/mel_filters.npz)
+whisper_datas = collect_data_files('whisper', includes=['assets/*'])
 
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=whisper_datas,
     hiddenimports=['fastapi', 'uvicorn', 'whisper', 'torch', 'numpy'],
     hookspath=[],
     hooksconfig={},

@@ -12,7 +12,8 @@ fn start_backend(app_handle: AppHandle) -> Result<String, String> {
     println!("Attempting to start backend sidecar...");
 
     let sidecar_command = app_handle.shell().sidecar("main")
-        .map_err(|e| format!("Failed to create sidecar command: {}", e))?;
+        .map_err(|e| format!("Failed to create sidecar command: {}", e))?
+        .env("PATH", std::env::var("PATH").unwrap_or_default());
 
     let (mut rx, child) = sidecar_command
         .spawn()
