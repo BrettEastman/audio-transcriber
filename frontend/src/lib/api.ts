@@ -7,19 +7,29 @@ export class TranscriptionAPI {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        ...options.headers,
-      },
-    });
+    console.log(`Making request to: ${API_BASE_URL}${endpoint}`);
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`API Error: ${response.status} - ${error}`);
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          ...options.headers,
+        },
+      });
+
+      console.log(`Response status: ${response.status}`);
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error(`API Error: ${response.status} - ${error}`);
+        throw new Error(`API Error: ${response.status} - ${error}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error(`Network error:`, error);
+      throw error;
     }
-
-    return response.json();
   }
 
   static async uploadAudio(
@@ -101,21 +111,30 @@ export class TranscriptionAPI {
     onUpdate?: (job: TranscriptionJob) => void,
     intervalMs: number = 1000
   ): Promise<TranscriptionJob> {
+    console.log(`Starting to poll for job: ${jobId}`);
     return new Promise((resolve, reject) => {
       const poll = async () => {
         try {
+          console.log(`Polling job status for: ${jobId}`);
           const job = await this.getTranscriptionStatus(jobId);
+          console.log(`Job status: ${job.status}`, job);
           onUpdate?.(job);
 
           if (job.status === "completed") {
+            console.log(`Job completed: ${jobId}`);
             resolve(job);
           } else if (job.status === "error") {
+            console.error(`Job failed: ${jobId}`, job.error);
             reject(new Error(job.error || "Transcription failed"));
           } else {
             // Continue polling
+            console.log(
+              `Job still processing: ${jobId}, polling again in ${intervalMs}ms`
+            );
             setTimeout(poll, intervalMs);
           }
         } catch (error) {
+          console.error(`Polling error for job ${jobId}:`, error);
           reject(error);
         }
       };

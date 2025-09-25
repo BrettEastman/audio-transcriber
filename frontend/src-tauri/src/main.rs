@@ -55,6 +55,7 @@ fn start_backend(app_handle: AppHandle) -> Result<String, String> {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_http::init())
         .manage(BackendProcess(Default::default()))
         .setup(|app| {
             // Auto-start backend on app launch

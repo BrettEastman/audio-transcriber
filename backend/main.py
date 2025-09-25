@@ -55,7 +55,10 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "tauri://localhost",
         "http://tauri.localhost",
-        "https://tauri.localhost"
+        "https://tauri.localhost",
+        "tauri://localhost:*",
+        "https://tauri.localhost:*",
+        "*"  # Allow all origins for Tauri (you can restrict this later)
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
