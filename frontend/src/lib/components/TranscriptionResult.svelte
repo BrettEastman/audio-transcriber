@@ -8,7 +8,7 @@
 
   let { job, onDelete }: Props = $props();
 
-  let showSegments = $state(false);
+  let showSegments = $state(true);
   let copied = $state(false);
 
   function copyToClipboard() {
@@ -97,6 +97,7 @@
 
         {#if onDelete}
           <button
+            aria-label="Delete"
             class="action-btn danger"
             onclick={onDelete}
             title="Delete transcription"
@@ -184,7 +185,7 @@
     border: 1px solid var(--dashed-border);
     border-radius: 8px;
     background: white;
-    color: #374151;
+    color: var(--blue-dark);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
@@ -192,28 +193,28 @@
   }
 
   .action-btn:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
+    background: var(--background);
+    border-color: var(--upload-icon);
   }
 
   .action-btn.toggle {
     background: var(--dashed-border-hover);
-    color: white;
-    border-color: var(--dashed-border-hover);
+    color: var(--white-background);
+    border-color: var(--dashed-border);
   }
 
   .action-btn.toggle:hover {
-    background: #2563eb;
+    background: var(--pulse-dark);
   }
 
   .action-btn.danger {
-    color: #dc2626;
-    border-color: #fca5a5;
+    color: var(--warning-background);
+    border-color: var(--warning-light);
   }
 
   .action-btn.danger:hover {
-    background: #fef2f2;
-    border-color: #f87171;
+    background: var(--warning-light);
+    border-color: var(--warning-background);
   }
 
   .transcript-content {
@@ -242,7 +243,7 @@
     display: flex;
     gap: 1rem;
     padding: 0.75rem;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--background);
   }
 
   .segment:last-child {
@@ -253,7 +254,7 @@
     flex-shrink: 0;
     font-size: 0.75rem;
     color: var(--upload-icon);
-    background: #f3f4f6;
+    background: var(--background);
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     font-family: "Monaco", "Menlo", monospace;
@@ -263,7 +264,7 @@
 
   .segment-text {
     flex: 1;
-    color: #374151;
+    color: var(--blue-dark);
     line-height: 1.5;
   }
 

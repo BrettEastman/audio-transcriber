@@ -223,7 +223,7 @@
 
   .error-banner {
     background: var(--warning-background);
-    border: 1px solid #fecaca;
+    border: 1px solid var(--warning-lighter);
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 2rem;
@@ -251,7 +251,7 @@
   }
 
   .error-banner button:hover {
-    background: rgba(220, 38, 38, 0.1);
+    background: var(--warning-mid);
   }
 
   .main-content {
@@ -280,7 +280,7 @@
     margin: 0 0 1.5rem 0;
     font-size: 1.5rem;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--blue-dark);
   }
 
   .job-list {
@@ -294,7 +294,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border-darker);
     border-radius: 8px;
     background: var(--white-background);
   }
@@ -315,7 +315,7 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 500;
-    color: #1f2937;
+    color: var(--blue-dark);
   }
 
   .status {
@@ -327,18 +327,18 @@
   }
 
   .status-completed {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--status-completed-bg);
+    color: var(--status-completed);
   }
 
   .status-processing {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--status-processing-bg);
+    color: var(--status-processing);
   }
 
   .status-queued {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--status-queued-bg);
+    color: var(--status-queued);
   }
 
   .status-error {
