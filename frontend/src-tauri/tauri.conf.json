@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "audio-transcriber",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "identifier": "com.brettaustineastman.audio-transcriber",
   "build": {
     "frontendDist": "../dist",
@@ -13,8 +13,8 @@
     "windows": [
       {
         "title": "Audio Transcriber",
-        "width": 800,
-        "height": 600,
+        "width": 1200,
+        "height": 1200,
         "resizable": true,
         "fullscreen": false,
         "dragDropEnabled": false

@@ -305,12 +305,12 @@
 
   .drop-zone:hover {
     border-color: var(--dashed-border-hover);
-    background: var(--background);
+    background: var(--white-bg-darker);
   }
 
   .drop-zone.drag-over {
     border-color: var(--dashed-border-hover);
-    background: var(--background);
+    background: var(--white-bg-darker);
     transform: scale(1.02);
   }
 

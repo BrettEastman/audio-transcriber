@@ -184,7 +184,7 @@
     padding: 0.5rem 1rem;
     border: 1px solid var(--dashed-border);
     border-radius: 8px;
-    background: white;
+    background: var(--white-background);
     color: var(--blue-dark);
     font-size: 0.875rem;
     font-weight: 500;
@@ -193,7 +193,7 @@
   }
 
   .action-btn:hover {
-    background: var(--background);
+    background: var(--white-bg-darker);
     border-color: var(--upload-icon);
   }
 
@@ -244,7 +244,7 @@
     display: flex;
     gap: 1rem;
     padding: 0.75rem;
-    border-bottom: 1px solid var(--background);
+    border-bottom: 1px solid var(--white-bg-darker);
   }
 
   .segment:last-child {
@@ -255,7 +255,7 @@
     flex-shrink: 0;
     font-size: 0.75rem;
     color: var(--upload-icon);
-    background: var(--background);
+    background: var(--white-bg-darker);
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     font-family: "Monaco", "Menlo", monospace;
