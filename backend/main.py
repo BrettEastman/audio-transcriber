@@ -10,10 +10,22 @@ import asyncio
 from pydantic import BaseModel
 import logging
 import sys
+import shutil
 
 # Configure logging EARLY (before any logging calls)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Ensure ffmpeg is discoverable when launched as a Tauri sidecar (limited PATH)
+BREW_PATHS = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"]
+if shutil.which("ffmpeg") is None:
+    extra_paths = ":".join([p for p in BREW_PATHS if os.path.isdir(p)])
+    os.environ["PATH"] = f"{extra_paths}:{os.environ.get('PATH','')}"
+ffmpeg_path = shutil.which("ffmpeg")
+if ffmpeg_path:
+    logger.info(f"ffmpeg found at: {ffmpeg_path}")
+else:
+    logger.warning("ffmpeg not found on PATH. Please install via Homebrew: `brew install ffmpeg`")
 
 # Set Whisper cache directory to a writable location
 cache_dir = os.path.expanduser('~/.cache/whisper')

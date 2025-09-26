@@ -13,8 +13,8 @@
     "windows": [
       {
         "title": "Audio Transcriber",
-        "width": 1200,
-        "height": 1200,
+        "width": 900,
+        "height": 1100,
         "resizable": true,
         "fullscreen": false,
         "dragDropEnabled": false
@@ -36,6 +36,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["../../backend/dist/main"]
+    "externalBin": ["../../backend/dist/main_with_assets"]
   }
 }

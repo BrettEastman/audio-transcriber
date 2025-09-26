@@ -4,23 +4,51 @@
 use tauri::{Manager, AppHandle};
 use tauri_plugin_shell::{ShellExt, process::CommandEvent};
 use std::sync::Mutex;
+use std::net::TcpStream;
 
 struct BackendProcess(Mutex<Option<tauri_plugin_shell::process::CommandChild>>);
+
+fn is_backend_listening() -> bool {
+    TcpStream::connect("127.0.0.1:8000").is_ok()
+}
 
 #[tauri::command]
 fn start_backend(app_handle: AppHandle) -> Result<String, String> {
     println!("Attempting to start backend sidecar...");
 
-    let sidecar_command = app_handle.shell().sidecar("main")
+    // If port 8000 already has a listener, don't spawn another backend
+    if is_backend_listening() {
+        println!("Backend already listening on 127.0.0.1:8000; skipping spawn.");
+        return Ok("Backend already running".to_string());
+    }
+
+    // Also avoid double-spawn if we already have a child stored
+    let backend_state: tauri::State<BackendProcess> = app_handle.state();
+    if backend_state.0.lock().unwrap().is_some() {
+        println!("Backend process already spawned; skipping spawn.");
+        return Ok("Backend already spawned".to_string());
+    }
+
+    // Ensure Homebrew and common bin dirs are on PATH when launching sidecar
+    let mut path = std::env::var("PATH").unwrap_or_default();
+    let brew_paths = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"];
+    // Prepend any that are missing
+    for p in brew_paths {
+        if !path.split(':').any(|s| s == p) {
+            path = format!("{}:{}", p, path);
+        }
+    }
+    println!("Starting backend with PATH={}", path);
+
+    let sidecar_command = app_handle.shell().sidecar("main_with_assets")
         .map_err(|e| format!("Failed to create sidecar command: {}", e))?
-        .env("PATH", std::env::var("PATH").unwrap_or_default());
+        .env("PATH", path);
 
     let (mut rx, child) = sidecar_command
         .spawn()
         .map_err(|e| format!("Failed to spawn backend sidecar: {}", e))?;
 
     // Store the process handle
-    let backend_state: tauri::State<BackendProcess> = app_handle.state();
     *backend_state.0.lock().unwrap() = Some(child);
 
     // Handle stdout/stderr in background

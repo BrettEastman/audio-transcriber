@@ -82,9 +82,6 @@
     {#if isCheckingBackend}
       <div class="loading-screen">
         <div class="loading-content">
-          <div class="spinner">
-            <i class="ri-loader-4-line"></i>
-          </div>
           <h2>Starting Audio Transcriber</h2>
           <p>Loading Whisper AI model... This may take a moment.</p>
         </div>
@@ -412,10 +409,6 @@
     .loading-content,
     .error-content {
       padding: 1rem;
-    }
-
-    .spinner i {
-      font-size: 2.5rem;
     }
   }
 </style>
