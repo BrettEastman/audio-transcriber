@@ -1,0 +1,47 @@
+---
+alwaysApply: true
+---
+
+## Error Handling
+
+- User-friendly error messages with proper UI feedback
+- Graceful degradation for network failures
+- Loading states and progress indicators
+- Error boundaries in components
+
+## Performance Considerations
+
+- Lazy loading for large components
+- Efficient polling with proper cleanup
+- Memory management for file uploads
+- Background task cleanup in FastAPI
+
+## Development Workflow
+
+- Use the `start.sh` script for local development
+- Backend runs on port 8000, frontend on port 5173
+- Tauri development with `npm run tauri:dev`
+- Shared types ensure frontend-backend compatibility
+
+## Code Style
+
+- Concise variable names with clarity
+- Consistent function naming (camelCase)
+- Proper async/await usage
+- Clean component separation of concerns
+- Meaningful console logging for debugging
+
+## Audio Processing
+
+- Support multiple audio formats (MP3, WAV, M4A, etc.)
+- File validation before upload
+- Progress tracking for large files
+- Background transcription processing
+- Segmented results with timestamps
+
+## Tauri Integration
+
+- File drop handling with proper event listeners
+- Desktop-specific UI considerations
+- Bundled backend executable configuration
+- Proper cleanup of event listeners

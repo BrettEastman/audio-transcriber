@@ -139,7 +139,7 @@ transcription_jobs: Dict[str, dict] = {}
 
 # Load Whisper model on startup (you can change model size based on your needs)
 # Options: tiny, base, small, medium, large-v3
-MODEL_SIZE = "base"  # Good balance of speed/accuracy
+MODEL_SIZE = "medium"
 model = None
 
 class TranscriptionResponse(BaseModel):
