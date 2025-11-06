@@ -83,17 +83,25 @@ async def lifespan(app: FastAPI):
 
     # Set download root for Whisper models
     try:
+        # First try to load from cache directory
         model = whisper.load_model(MODEL_SIZE, download_root=cache_dir)
-        logger.info("Model loaded successfully!")
+        logger.info("Model loaded successfully from cache!")
     except Exception as e:
-        logger.error(f"Failed to load model: {e}")
-        # Try loading without specifying download_root
+        logger.error(f"Failed to load model from cache: {e}")
+        # Try loading without specifying download_root (uses default cache)
         try:
             model = whisper.load_model(MODEL_SIZE)
-            logger.info("Model loaded successfully (fallback)!")
+            logger.info("Model loaded successfully from default cache!")
         except Exception as e2:
-            logger.error(f"Failed to load model even with fallback: {e2}")
-            raise e2
+            logger.error(f"Failed to load model from default cache: {e2}")
+            # Last resort: force download and load
+            try:
+                logger.info("Attempting to download model...")
+                model = whisper.load_model(MODEL_SIZE, download_root=cache_dir, download=True)
+                logger.info("Model downloaded and loaded successfully!")
+            except Exception as e3:
+                logger.error(f"Failed to download and load model: {e3}")
+                raise e3
 
     # Log presence of mel filter assets (debug)
     mel_path = os.path.join(os.path.dirname(whisper.__file__), "assets", "mel_filters.npz")
