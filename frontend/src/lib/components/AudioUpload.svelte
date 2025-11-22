@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { SUPPORTED_AUDIO_FORMATS } from "../../../../shared/types.js";
   import { transcriptionStore } from "../stores/transcription.js";
 
@@ -110,96 +109,6 @@
     transcriptionStore.cancelUpload();
   }
 
-  // Handle Tauri file drop events
-  onMount(() => {
-    console.log("AudioUpload component mounted");
-
-    // Check if we're running in Tauri
-    const setupTauriListeners = async () => {
-      try {
-        console.log("Attempting to import Tauri API...");
-        const { listen } = await import("@tauri-apps/api/event");
-
-        console.log(
-          "Successfully imported Tauri API, setting up file drop listener"
-        );
-
-        // Listen for file drop events
-        const unlisten = await listen("tauri://file-drop", (event) => {
-          console.log("File drop event received:", event);
-          const files = event.payload as string[];
-          if (files && files.length > 0) {
-            handleTauriFileDrop(files[0]);
-          }
-        });
-
-        // Listen for file drop hover events
-        const unlistenHover = await listen("tauri://file-drop-hover", () => {
-          isDragOver = true;
-        });
-
-        const unlistenCancelled = await listen(
-          "tauri://file-drop-cancelled",
-          () => {
-            isDragOver = false;
-          }
-        );
-
-        // Cleanup listeners when component is destroyed
-        return () => {
-          unlisten();
-          unlistenHover();
-          unlistenCancelled();
-        };
-      } catch (error) {
-        console.log("Not running in Tauri, using web drag and drop");
-        return undefined;
-      }
-    };
-
-    setupTauriListeners().then((cleanup) => {
-      if (cleanup) {
-        // Store cleanup function for later use
-        return cleanup;
-      }
-    });
-  });
-
-  // Handle file drop from Tauri (file path)
-  async function handleTauriFileDrop(filePath: string) {
-    console.log("Handling Tauri file drop:", filePath);
-    isDragOver = false;
-
-    try {
-      // Extract filename from path
-      const fileName =
-        filePath.split("/").pop() || filePath.split("\\").pop() || "unknown";
-
-      // Check if it's a supported audio file
-      if (!isValidAudioFile({ name: fileName } as File)) {
-        alert(
-          `Unsupported file type. Please use: ${SUPPORTED_AUDIO_FORMATS.join(", ")}`
-        );
-        return;
-      }
-
-      // For now, show a message that drag and drop is detected but ask user to browse
-      // This is a temporary solution until we can properly read files in Tauri
-      const useFile = confirm(
-        `Drag and drop detected: ${fileName}\n\nDue to current limitations, please click "OK" then use the browse button to select this file, or click "Cancel" to ignore.`
-      );
-
-      if (useFile) {
-        // Trigger the file input dialog
-        triggerFileSelect();
-      }
-    } catch (error) {
-      console.error("Error handling Tauri file drop:", error);
-      alert(
-        "Drag and drop detected, but please use the browse button to select your file."
-      );
-    }
-  }
 </script>
 
 <div class="upload-container">

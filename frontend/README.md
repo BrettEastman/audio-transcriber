@@ -1,38 +1,41 @@
-# sv
+# Frontend (SvelteKit)
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+This SvelteKit app powers the browser experience for Audio Transcriber. The UI uploads audio, tracks progress, and renders transcribed segments from the FastAPI backend.
 
-## Creating a project
+## Getting started
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
+```bash
+cd frontend
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+- The dev server runs on `http://localhost:5173` and proxies workspace API calls to `http://localhost:8000`.
+- Keep `frontend/src/lib/api.ts` aligned with `shared/types.ts` when you introduce new payloads.
 
-To create a production version of your app:
+## Build & preview
 
-```sh
+```bash
 npm run build
+npm run preview
 ```
 
-You can preview the production build with `npm run preview`.
+- Use `npm run preview` to sanity-check the production bundle before sharing it locally.
+- Ensure any new assets (icons, fonts) are referenced from `/static` or `/src/lib/assets` so Vite can bundle them.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## QA & linting
+
+```bash
+npm run check
+npm run check:watch
+```
+
+- `svelte-check` enforces typing/contracts for stores, props, and components.
+- Run `npm run check` in CI to guard against regressions.
+
+## Recommended workflow
+
+- Run `../start.sh` from the repo root to boot both services. If you prefer to run services individually, start the backend (./backend/main.py) first before running npm run dev
+- Refresh `frontend/README.md` instructions after you change the build or dev commands.
+
+For broader execution details, see the repo-level `README.md`.
