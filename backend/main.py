@@ -16,7 +16,7 @@ import shutil
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Ensure ffmpeg is discoverable when launched as a Tauri sidecar (limited PATH)
+# Ensure ffmpeg is discoverable (check common installation paths)
 BREW_PATHS = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"]
 if shutil.which("ffmpeg") is None:
     extra_paths = ":".join([p for p in BREW_PATHS if os.path.isdir(p)])
@@ -34,33 +34,8 @@ os.environ['XDG_CACHE_HOME'] = os.path.expanduser('~/.cache')
 os.environ['WHISPER_CACHE'] = cache_dir
 logger.info(f"Whisper cache directory set to: {cache_dir}")
 
-# Handle PyInstaller bundled assets
-if getattr(sys, 'frozen', False):
-    # Running in a PyInstaller bundle
-    bundle_dir = sys._MEIPASS
-    logger.info(f"Running in PyInstaller bundle, bundle dir: {bundle_dir}")
-
-    whisper_assets_path = os.path.join(bundle_dir, 'whisper', 'assets')
-    logger.info(f"Looking for Whisper assets at: {whisper_assets_path}")
-
-    if os.path.exists(whisper_assets_path):
-        # Set environment variable to point to bundled assets
-        os.environ['WHISPER_ASSETS_PATH'] = whisper_assets_path
-        logger.info(f"Using bundled Whisper assets from: {whisper_assets_path}")
-    else:
-        logger.warning(f"Bundled Whisper assets not found at: {whisper_assets_path}")
-        if os.path.exists(bundle_dir):
-            bundle_contents = os.listdir(bundle_dir)
-            logger.info(f"Available files in bundle: {bundle_contents}")
-            # Check if whisper directory exists
-            whisper_dir = os.path.join(bundle_dir, 'whisper')
-            if os.path.exists(whisper_dir):
-                whisper_contents = os.listdir(whisper_dir)
-                logger.info(f"Contents of whisper directory: {whisper_contents}")
-        else:
-            logger.error(f"Bundle directory does not exist: {bundle_dir}")
-else:
-    logger.info("Running in development mode")
+# Running in development mode (Python directly, not bundled)
+logger.info("Running in development mode")
 
 import signal
 import sys
@@ -130,12 +105,6 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "tauri://localhost",
-        "http://tauri.localhost",
-        "https://tauri.localhost",
-        "tauri://localhost:*",
-        "https://tauri.localhost:*",
-        "*"  # Allow all origins for Tauri (you can restrict this later)
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
