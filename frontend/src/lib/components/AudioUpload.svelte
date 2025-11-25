@@ -54,10 +54,10 @@
     isShowingProgress = true; // Show progress bar immediately
     fakeProgressInterval = setInterval(() => {
       if (fakeProgress < 95) {
-        const increment = 2 + Math.random() * 3;
+        const increment = 0.1 + Math.random() * 0.2;
         fakeProgress = Math.min(95, fakeProgress + increment);
       }
-    }, 250);
+    }, 2000);
 
     try {
       await transcriptionStore.uploadFile(
