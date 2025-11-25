@@ -2,15 +2,19 @@
   import { onMount } from "svelte";
   import { SUPPORTED_AUDIO_FORMATS } from "../../../../shared/types.js";
   import { transcriptionStore } from "../stores/transcription.js";
+  import { TranscriptionAPI } from "../api.js";
 
   let storeState = $derived($transcriptionStore);
-  let isUploading = $derived(storeState.isUploading);
   let currentJob = $derived(storeState.currentJob);
   let isTranscribing = $derived(
-    currentJob?.status === "queued" || currentJob?.status === "processing"
+    currentJob &&
+      (currentJob.status === "queued" ||
+        currentJob.status === "processing" ||
+        !currentJob.text)
   );
-  let transcriptionProgress = $state(0);
-  let transcriptionStartTime = $state<number | null>(null);
+  let fakeProgress = $state(0);
+  let fakeProgressInterval: ReturnType<typeof setInterval> | null = null;
+  let isShowingProgress = $state(false);
   let isDragOver = $state(false);
   let fileInput: HTMLInputElement;
   let selectedLanguage = $state<string>("");
@@ -42,14 +46,18 @@
       return;
     }
 
-    console.log(
-      "Uploading file:",
-      file.name,
-      "Size:",
-      file.size,
-      "Type:",
-      file.type
-    );
+    // Start fake progress bar immediately when file is selected
+    if (fakeProgressInterval) {
+      clearInterval(fakeProgressInterval);
+    }
+    fakeProgress = 0;
+    isShowingProgress = true; // Show progress bar immediately
+    fakeProgressInterval = setInterval(() => {
+      if (fakeProgress < 95) {
+        const increment = 2 + Math.random() * 3;
+        fakeProgress = Math.min(95, fakeProgress + increment);
+      }
+    }, 250);
 
     try {
       await transcriptionStore.uploadFile(
@@ -63,6 +71,13 @@
       // Check if it was cancelled
       if (error instanceof Error && error.message.includes("abort")) {
         console.log("Upload cancelled by user");
+        // Stop progress bar on cancel
+        if (fakeProgressInterval) {
+          clearInterval(fakeProgressInterval);
+          fakeProgressInterval = null;
+        }
+        fakeProgress = 0;
+        isShowingProgress = false;
         return;
       }
 
@@ -70,6 +85,13 @@
       alert(
         `Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`
       );
+      // Stop progress bar on error
+      if (fakeProgressInterval) {
+        clearInterval(fakeProgressInterval);
+        fakeProgressInterval = null;
+      }
+      fakeProgress = 0;
+      isShowingProgress = false;
     } finally {
       currentXhr = null;
     }
@@ -113,49 +135,76 @@
       currentXhr.abort();
       currentXhr = null;
     }
+    // Stop progress bar
+    if (fakeProgressInterval) {
+      clearInterval(fakeProgressInterval);
+      fakeProgressInterval = null;
+    }
+    fakeProgress = 0;
+    isShowingProgress = false;
     transcriptionStore.cancelUpload();
   }
 
-  // Track transcription progress - calculate based on segments when available
+  // Stop progress bar when transcription completes
   $effect(() => {
-    if (isTranscribing && !transcriptionStartTime) {
-      // Transcription just started
-      transcriptionStartTime = Date.now();
-      transcriptionProgress = 10; // Start at 10%
-    } else if (!isTranscribing && transcriptionStartTime) {
-      // Transcription completed or not started
-      transcriptionStartTime = null;
-      if (currentJob?.status === "completed") {
-        transcriptionProgress = 100;
-      } else {
-        transcriptionProgress = 0;
-      }
-    } else if (currentJob?.status === "completed") {
-      // Ensure progress shows 100% when completed
-      transcriptionProgress = 100;
+    if (currentJob?.status === "completed" && fakeProgressInterval) {
+      clearInterval(fakeProgressInterval);
+      fakeProgressInterval = null;
+      fakeProgress = 0;
+      isShowingProgress = false; // Hide progress bar when done
     }
   });
 
-  // Update transcription progress - smooth time-based estimation
+  // Simple completion check - check job status periodically (every 3 seconds)
+  let completionCheckInterval: ReturnType<typeof setInterval> | null = null;
+
+  $effect(() => {
+    // Start checking for completion when we have a job that's transcribing
+    if (isTranscribing && !completionCheckInterval) {
+      completionCheckInterval = setInterval(async () => {
+        if (!currentJob || !isTranscribing) {
+          if (completionCheckInterval) {
+            clearInterval(completionCheckInterval);
+            completionCheckInterval = null;
+          }
+          return;
+        }
+
+        try {
+          const job = await TranscriptionAPI.getTranscriptionStatus(
+            currentJob.job_id
+          );
+          if (job.status === "completed" || job.status === "error") {
+            if (completionCheckInterval) {
+              clearInterval(completionCheckInterval);
+              completionCheckInterval = null;
+            }
+            // Update the store with the completed job
+            transcriptionStore.updateJob(job);
+          }
+        } catch (error) {
+          console.error("Error checking job status:", error);
+        }
+      }, 3000); // Check every 3 seconds
+    }
+
+    // Stop checking if job completes or is no longer transcribing
+    if (!isTranscribing && completionCheckInterval) {
+      clearInterval(completionCheckInterval);
+      completionCheckInterval = null;
+    }
+  });
+
+  // Cleanup intervals on unmount
   onMount(() => {
-    const interval = setInterval(() => {
-      if (isTranscribing && transcriptionStartTime) {
-        const elapsed = Date.now() - transcriptionStartTime;
-        const elapsedSeconds = elapsed / 1000;
-
-        // Smooth progress curve: starts fast, slows down as it approaches completion
-        // This gives a more realistic feel than linear progress
-        // Formula: 10% + (90% * smooth curve that approaches but never reaches 100%)
-        const smoothProgress = 1 - Math.exp(-elapsedSeconds / 30); // Exponential approach
-        const progress = Math.min(
-          95, // Cap at 95% until actually complete
-          10 + smoothProgress * 85
-        );
-        transcriptionProgress = Math.round(progress);
+    return () => {
+      if (fakeProgressInterval) {
+        clearInterval(fakeProgressInterval);
       }
-    }, 500); // Update every 500ms for smoother animation
-
-    return () => clearInterval(interval);
+      if (completionCheckInterval) {
+        clearInterval(completionCheckInterval);
+      }
+    };
   });
 </script>
 
@@ -175,7 +224,7 @@
     ondrop={handleDrop}
     ondragover={handleDragOver}
     ondragleave={handleDragLeave}
-    onclick={isUploading || isTranscribing ? undefined : triggerFileSelect}
+    onclick={isShowingProgress ? undefined : triggerFileSelect}
     role="button"
     tabindex="0"
     onkeydown={(e) => e.key === "Enter" && triggerFileSelect()}
@@ -183,33 +232,26 @@
     <div class="drop-content">
       <i
         class="ri-upload-cloud-2-line upload-icon"
-        class:uploading={isUploading || isTranscribing}
+        class:uploading={isShowingProgress}
       ></i>
       <h3>
-        {#if isTranscribing}
+        {#if isShowingProgress}
           Transcribing...
         {:else}
           Transcribe Audio File
         {/if}
       </h3>
 
-      {#if isUploading}
+      {#if isShowingProgress}
         <div class="upload-progress">
-          <p>Uploading file...</p>
+          <p>Transcribing audio... {Math.round(fakeProgress)}%</p>
+          <div class="progress-bar-container">
+            <div class="progress-bar" style="width: {fakeProgress}%"></div>
+          </div>
           <button class="cancel-btn" onclick={(e) => cancelUpload(e)}>
             <i class="ri-close-line"></i>
             Cancel
           </button>
-        </div>
-      {:else if isTranscribing}
-        <div class="upload-progress">
-          <p>Transcribing audio... {transcriptionProgress}%</p>
-          <div class="progress-bar-container">
-            <div
-              class="progress-bar"
-              style="width: {transcriptionProgress}%"
-            ></div>
-          </div>
         </div>
       {:else}
         <p>Drag and drop your audio file here, or click to browse</p>

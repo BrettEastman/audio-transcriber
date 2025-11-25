@@ -91,14 +91,12 @@ export class TranscriptionAPI {
   // Parameters:
   // - file: The audio file to upload (from an <input type="file">)
   // - language: Optional language hint (e.g., "en", "es")
-  // - onProgress: Callback function that receives upload progress (0-100)
   // - onXhrReady: Callback that receives the XHR object (for cancellation)
   //
   // Returns: A Promise that resolves with the job information (job_id, status)
   static async uploadAudio(
     file: File,
     language?: string,
-    onProgress?: (progress: number) => void,
     onXhrReady?: (xhr: XMLHttpRequest) => void
   ): Promise<TranscriptionJob> {
     // ====================================================================
@@ -129,58 +127,11 @@ export class TranscriptionAPI {
       onXhrReady?.(xhr);
 
       // ====================================================================
-      // UPLOAD START EVENT
-      // ====================================================================
-      // Fires when the upload begins. We set progress to 0% to show the
-      // progress bar has started.
-      xhr.upload.addEventListener("loadstart", () => {
-        console.log("Upload started");
-        if (onProgress) {
-          onProgress(0);
-        }
-      });
-
-      // ====================================================================
-      // UPLOAD PROGRESS EVENT
-      // ====================================================================
-      // This fires repeatedly during upload, giving us progress updates.
-      // event.loaded = bytes uploaded so far
-      // event.total = total bytes to upload
-      // We calculate percentage and call the onProgress callback to update UI
-      xhr.upload.addEventListener("progress", (event) => {
-        console.log("Upload progress event:", {
-          loaded: event.loaded,
-          total: event.total,
-          lengthComputable: event.lengthComputable,
-        });
-
-        // Only calculate progress if we know the total size
-        // Some servers don't send Content-Length, so total might be 0
-        if (event.lengthComputable && onProgress) {
-          const progress = Math.round((event.loaded / event.total) * 100);
-          console.log(`Upload progress: ${progress}%`);
-          onProgress(progress); // Update UI with new progress
-        } else if (!event.lengthComputable) {
-          console.warn("Progress event not computable - total size unknown");
-        }
-      });
-
-      // ====================================================================
       // UPLOAD COMPLETE EVENT
       // ====================================================================
       // Fires when the upload finishes (regardless of success/failure)
       // We check the status code to determine if it was successful
       xhr.addEventListener("load", () => {
-        console.log("XHR load event fired - upload complete");
-        console.log("XHR Response:", xhr.status, xhr.responseText);
-
-        // Ensure progress is set to 100% when upload completes
-        // This ensures the UI shows 100% even if the last progress event was missed
-        if (onProgress) {
-          console.log("Setting progress to 100% on load");
-          onProgress(100);
-        }
-
         // Check if the request was successful (HTTP 200)
         if (xhr.status === 200) {
           try {
@@ -221,14 +172,10 @@ export class TranscriptionAPI {
   }
 
   // ========================================================================
-  // GET TRANSCRIPTION STATUS
+  // GET TRANSCRIPTION STATUS (SIMPLE CHECK)
   // ========================================================================
-  // Polls the backend to get the current status of a transcription job.
-  // The job status can be: "queued", "processing", "completed", or "error"
-  // If completed, the response includes the transcribed text and segments.
-  //
-  // This is called repeatedly (polling) until the job is complete.
-  // See pollForCompletion() below for automatic polling.
+  // Checks the current status of a transcription job.
+  // Used for simple completion checks, not continuous polling.
   static async getTranscriptionStatus(
     jobId: string
   ): Promise<TranscriptionJob> {
@@ -268,88 +215,5 @@ export class TranscriptionAPI {
     model_loaded: boolean;
   }> {
     return this.request("/health");
-  }
-
-  // ========================================================================
-  // POLL FOR COMPLETION (AUTOMATIC POLLING)
-  // ========================================================================
-  // This is a convenience method that automatically polls the backend until
-  // the transcription job is complete. Instead of manually calling
-  // getTranscriptionStatus() in a loop, you can use this method.
-  //
-  // How it works:
-  // 1. Calls getTranscriptionStatus() every intervalMs milliseconds (default 1 second)
-  // 2. Calls onUpdate callback each time status is checked (for UI updates)
-  // 3. Stops when status is "completed" or "error"
-  // 4. Returns the final job data when complete
-  //
-  // Parameters:
-  // - jobId: The job ID returned from uploadAudio()
-  // - onUpdate: Optional callback that receives job updates (for progress UI)
-  // - intervalMs: How often to check status (default 1000ms = 1 second)
-  //
-  // Returns: Promise that resolves with the completed job (includes transcribed text)
-  //
-  // Example usage:
-  //   const job = await TranscriptionAPI.pollForCompletion(
-  //     jobId,
-  //     (job) => console.log(`Status: ${job.status}`),
-  //     2000  // Check every 2 seconds
-  //   );
-  //   console.log("Transcription:", job.text);
-  static async pollForCompletion(
-    jobId: string,
-    onUpdate?: (job: TranscriptionJob) => void,
-    intervalMs: number = 1000
-  ): Promise<TranscriptionJob> {
-    console.log(`Starting to poll for job: ${jobId}`);
-
-    // Wrap in a Promise so we can use async/await
-    return new Promise((resolve, reject) => {
-      // ====================================================================
-      // POLLING FUNCTION
-      // ====================================================================
-      // This is a recursive function that calls itself until the job is done.
-      // It's similar to a while loop, but uses setTimeout for delays.
-      const poll = async () => {
-        try {
-          console.log(`Polling job status for: ${jobId}`);
-
-          // Check the current job status
-          const job = await this.getTranscriptionStatus(jobId);
-          console.log(`Job status: ${job.status}`, job);
-
-          // Notify the caller of the update (for UI progress indicators)
-          onUpdate?.(job);
-
-          // ================================================================
-          // CHECK JOB STATUS AND DECIDE WHAT TO DO
-          // ================================================================
-          if (job.status === "completed") {
-            // Success! The transcription is done, return the results
-            console.log(`Job completed: ${jobId}`);
-            resolve(job);
-          } else if (job.status === "error") {
-            // The transcription failed, reject the promise with an error
-            console.error(`Job failed: ${jobId}`, job.error);
-            reject(new Error(job.error || "Transcription failed"));
-          } else {
-            // Still processing (status is "queued" or "processing")
-            // Schedule another check after the interval
-            console.log(
-              `Job still processing: ${jobId}, polling again in ${intervalMs}ms`
-            );
-            setTimeout(poll, intervalMs); // Recursive call after delay
-          }
-        } catch (error) {
-          // If the API call itself fails (network error, etc.), stop polling
-          console.error(`Polling error for job ${jobId}:`, error);
-          reject(error);
-        }
-      };
-
-      // Start the polling loop
-      poll();
-    });
   }
 }
