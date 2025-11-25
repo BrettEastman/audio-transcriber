@@ -2,9 +2,19 @@
   import { onMount } from "svelte";
   import { SUPPORTED_AUDIO_FORMATS } from "../../../../shared/types.js";
   import { transcriptionStore } from "../stores/transcription.js";
+  import { TranscriptionAPI } from "../api.js";
 
   let storeState = $derived($transcriptionStore);
-  let isUploading = $derived(storeState.isUploading);
+  let currentJob = $derived(storeState.currentJob);
+  let isTranscribing = $derived(
+    currentJob &&
+      (currentJob.status === "queued" ||
+        currentJob.status === "processing" ||
+        !currentJob.text)
+  );
+  let fakeProgress = $state(0);
+  let fakeProgressInterval: ReturnType<typeof setInterval> | null = null;
+  let isShowingProgress = $state(false);
   let isDragOver = $state(false);
   let fileInput: HTMLInputElement;
   let selectedLanguage = $state<string>("");
@@ -36,14 +46,18 @@
       return;
     }
 
-    console.log(
-      "Uploading file:",
-      file.name,
-      "Size:",
-      file.size,
-      "Type:",
-      file.type
-    );
+    // Start fake progress bar immediately when file is selected
+    if (fakeProgressInterval) {
+      clearInterval(fakeProgressInterval);
+    }
+    fakeProgress = 0;
+    isShowingProgress = true; // Show progress bar immediately
+    fakeProgressInterval = setInterval(() => {
+      if (fakeProgress < 95) {
+        const increment = 0.1 + Math.random() * 0.2;
+        fakeProgress = Math.min(95, fakeProgress + increment);
+      }
+    }, 2000);
 
     try {
       await transcriptionStore.uploadFile(
@@ -57,6 +71,13 @@
       // Check if it was cancelled
       if (error instanceof Error && error.message.includes("abort")) {
         console.log("Upload cancelled by user");
+        // Stop progress bar on cancel
+        if (fakeProgressInterval) {
+          clearInterval(fakeProgressInterval);
+          fakeProgressInterval = null;
+        }
+        fakeProgress = 0;
+        isShowingProgress = false;
         return;
       }
 
@@ -64,6 +85,13 @@
       alert(
         `Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`
       );
+      // Stop progress bar on error
+      if (fakeProgressInterval) {
+        clearInterval(fakeProgressInterval);
+        fakeProgressInterval = null;
+      }
+      fakeProgress = 0;
+      isShowingProgress = false;
     } finally {
       currentXhr = null;
     }
@@ -107,99 +135,77 @@
       currentXhr.abort();
       currentXhr = null;
     }
+    // Stop progress bar
+    if (fakeProgressInterval) {
+      clearInterval(fakeProgressInterval);
+      fakeProgressInterval = null;
+    }
+    fakeProgress = 0;
+    isShowingProgress = false;
     transcriptionStore.cancelUpload();
   }
 
-  // Handle Tauri file drop events
-  onMount(() => {
-    console.log("AudioUpload component mounted");
-
-    // Check if we're running in Tauri
-    const setupTauriListeners = async () => {
-      try {
-        console.log("Attempting to import Tauri API...");
-        const { listen } = await import("@tauri-apps/api/event");
-
-        console.log(
-          "Successfully imported Tauri API, setting up file drop listener"
-        );
-
-        // Listen for file drop events
-        const unlisten = await listen("tauri://file-drop", (event) => {
-          console.log("File drop event received:", event);
-          const files = event.payload as string[];
-          if (files && files.length > 0) {
-            handleTauriFileDrop(files[0]);
-          }
-        });
-
-        // Listen for file drop hover events
-        const unlistenHover = await listen("tauri://file-drop-hover", () => {
-          isDragOver = true;
-        });
-
-        const unlistenCancelled = await listen(
-          "tauri://file-drop-cancelled",
-          () => {
-            isDragOver = false;
-          }
-        );
-
-        // Cleanup listeners when component is destroyed
-        return () => {
-          unlisten();
-          unlistenHover();
-          unlistenCancelled();
-        };
-      } catch (error) {
-        console.log("Not running in Tauri, using web drag and drop");
-        return undefined;
-      }
-    };
-
-    setupTauriListeners().then((cleanup) => {
-      if (cleanup) {
-        // Store cleanup function for later use
-        return cleanup;
-      }
-    });
+  // Stop progress bar when transcription completes
+  $effect(() => {
+    if (currentJob?.status === "completed" && fakeProgressInterval) {
+      clearInterval(fakeProgressInterval);
+      fakeProgressInterval = null;
+      fakeProgress = 0;
+      isShowingProgress = false; // Hide progress bar when done
+    }
   });
 
-  // Handle file drop from Tauri (file path)
-  async function handleTauriFileDrop(filePath: string) {
-    console.log("Handling Tauri file drop:", filePath);
-    isDragOver = false;
+  // Simple completion check - check job status periodically (every 3 seconds)
+  let completionCheckInterval: ReturnType<typeof setInterval> | null = null;
 
-    try {
-      // Extract filename from path
-      const fileName =
-        filePath.split("/").pop() || filePath.split("\\").pop() || "unknown";
+  $effect(() => {
+    // Start checking for completion when we have a job that's transcribing
+    if (isTranscribing && !completionCheckInterval) {
+      completionCheckInterval = setInterval(async () => {
+        if (!currentJob || !isTranscribing) {
+          if (completionCheckInterval) {
+            clearInterval(completionCheckInterval);
+            completionCheckInterval = null;
+          }
+          return;
+        }
 
-      // Check if it's a supported audio file
-      if (!isValidAudioFile({ name: fileName } as File)) {
-        alert(
-          `Unsupported file type. Please use: ${SUPPORTED_AUDIO_FORMATS.join(", ")}`
-        );
-        return;
-      }
-
-      // For now, show a message that drag and drop is detected but ask user to browse
-      // This is a temporary solution until we can properly read files in Tauri
-      const useFile = confirm(
-        `Drag and drop detected: ${fileName}\n\nDue to current limitations, please click "OK" then use the browse button to select this file, or click "Cancel" to ignore.`
-      );
-
-      if (useFile) {
-        // Trigger the file input dialog
-        triggerFileSelect();
-      }
-    } catch (error) {
-      console.error("Error handling Tauri file drop:", error);
-      alert(
-        "Drag and drop detected, but please use the browse button to select your file."
-      );
+        try {
+          const job = await TranscriptionAPI.getTranscriptionStatus(
+            currentJob.job_id
+          );
+          if (job.status === "completed" || job.status === "error") {
+            if (completionCheckInterval) {
+              clearInterval(completionCheckInterval);
+              completionCheckInterval = null;
+            }
+            // Update the store with the completed job
+            transcriptionStore.updateJob(job);
+          }
+        } catch (error) {
+          console.error("Error checking job status:", error);
+        }
+      }, 3000); // Check every 3 seconds
     }
-  }
+
+    // Stop checking if job completes or is no longer transcribing
+    if (!isTranscribing && completionCheckInterval) {
+      clearInterval(completionCheckInterval);
+      completionCheckInterval = null;
+    }
+  });
+
+  // Cleanup intervals on unmount
+  onMount(() => {
+    return () => {
+      if (fakeProgressInterval) {
+        clearInterval(fakeProgressInterval);
+      }
+      if (completionCheckInterval) {
+        clearInterval(completionCheckInterval);
+      }
+    };
+  });
 </script>
 
 <div class="upload-container">
@@ -218,7 +224,7 @@
     ondrop={handleDrop}
     ondragover={handleDragOver}
     ondragleave={handleDragLeave}
-    onclick={isUploading ? undefined : triggerFileSelect}
+    onclick={isShowingProgress ? undefined : triggerFileSelect}
     role="button"
     tabindex="0"
     onkeydown={(e) => e.key === "Enter" && triggerFileSelect()}
@@ -226,13 +232,22 @@
     <div class="drop-content">
       <i
         class="ri-upload-cloud-2-line upload-icon"
-        class:uploading={isUploading}
+        class:uploading={isShowingProgress}
       ></i>
-      <h3>{!isUploading ? "Transcribe Audio File" : "Transcribing..."}</h3>
+      <h3>
+        {#if isShowingProgress}
+          Transcribing...
+        {:else}
+          Transcribe Audio File
+        {/if}
+      </h3>
 
-      {#if isUploading}
+      {#if isShowingProgress}
         <div class="upload-progress">
-          <p>Uploading your file...</p>
+          <p>Transcribing audio... {Math.round(fakeProgress)}%</p>
+          <div class="progress-bar-container">
+            <div class="progress-bar" style="width: {fakeProgress}%"></div>
+          </div>
           <button class="cancel-btn" onclick={(e) => cancelUpload(e)}>
             <i class="ri-close-line"></i>
             Cancel
@@ -380,6 +395,54 @@
     align-items: center;
     gap: 1rem;
     width: 100%;
+  }
+
+  .progress-bar-container {
+    width: 100%;
+    max-width: 400px;
+    height: 8px;
+    background: var(--dashed-border);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      var(--dashed-border-hover),
+      var(--pulse-dark)
+    );
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-bar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
   }
 
   .cancel-btn {

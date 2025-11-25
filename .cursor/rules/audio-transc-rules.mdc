@@ -20,7 +20,6 @@ alwaysApply: true
 
 - Use the `start.sh` script for local development
 - Backend runs on port 8000, frontend on port 5173
-- Tauri development with `npm run tauri:dev`
 - Shared types ensure frontend-backend compatibility
 
 ## Code Style
@@ -38,10 +37,3 @@ alwaysApply: true
 - Progress tracking for large files
 - Background transcription processing
 - Segmented results with timestamps
-
-## Tauri Integration
-
-- File drop handling with proper event listeners
-- Desktop-specific UI considerations
-- Bundled backend executable configuration
-- Proper cleanup of event listeners
