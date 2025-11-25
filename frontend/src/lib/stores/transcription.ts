@@ -32,14 +32,10 @@ import { TranscriptionAPI } from "../api";
 //
 // - jobs: Array of all transcription jobs (history)
 // - currentJob: The currently selected/active job (for displaying results)
-// - uploadProgress: Upload progress percentage (0-100) for progress bars
-// - isUploading: Boolean flag to show/hide upload UI states
 // - error: Error message string (null when no error)
 interface TranscriptionState {
   jobs: TranscriptionJob[];
   currentJob: TranscriptionJob | null;
-  uploadProgress: number;
-  isUploading: boolean;
   error: string | null;
 }
 
@@ -51,8 +47,6 @@ interface TranscriptionState {
 const initialState: TranscriptionState = {
   jobs: [],
   currentJob: null,
-  uploadProgress: 0,
-  isUploading: false,
   error: null,
 };
 
@@ -123,8 +117,6 @@ function createTranscriptionStore() {
       // The spread operator (...) keeps existing state, only updates specified fields
       update((state) => ({
         ...state,
-        isUploading: true, // Show uploading UI
-        uploadProgress: 0, // Reset progress bar
         error: null, // Clear any previous errors
       }));
 
@@ -153,8 +145,6 @@ function createTranscriptionStore() {
           ...state,
           jobs: [job, ...state.jobs], // Add to front of array (newest first)
           currentJob: job, // Set as active job
-          isUploading: false, // Hide uploading UI
-          uploadProgress: 0, // Reset progress
         }));
 
         return job;
@@ -168,8 +158,6 @@ function createTranscriptionStore() {
           error instanceof Error ? error.message : "Upload failed";
         update((state) => ({
           ...state,
-          isUploading: false, // Hide uploading UI
-          uploadProgress: 0, // Reset progress
           error: errorMessage, // Show error message
         }));
         throw error; // Re-throw so caller can handle it
@@ -244,8 +232,6 @@ function createTranscriptionStore() {
     cancelUpload() {
       update((state) => ({
         ...state,
-        isUploading: false, // Hide uploading UI
-        uploadProgress: 0, // Reset progress bar
         error: null, // Clear any errors
       }));
     },
