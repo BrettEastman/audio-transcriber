@@ -1,11 +1,9 @@
-<!-- src/routes/+page.svelte -->
 <script lang="ts">
   import AudioUpload from "$lib/components/AudioUpload.svelte";
   import TranscriptionResult from "$lib/components/TranscriptionResult.svelte";
   import { transcriptionStore } from "$lib/stores/transcription";
   import { onMount } from "svelte";
 
-  // Reactive references to store values using Svelte 5 syntax
   let storeState = $derived($transcriptionStore);
   let jobs = $derived(storeState.jobs);
   let currentJob = $derived(storeState.currentJob);
@@ -14,7 +12,6 @@
   let isBackendReady = $state(false);
   let isCheckingBackend = $state(true);
 
-  // Check if backend is ready
   async function checkBackendHealth() {
     try {
       const response = await fetch("http://localhost:8000/health");
@@ -176,10 +173,7 @@
   :global(body) {
     margin: 0;
     padding: 0;
-    /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      sans-serif; */
     background: var(--white-background);
-    /* color: var(--blue-dark); */
   }
 
   .app {

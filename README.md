@@ -3,8 +3,8 @@
 ## Overview
 
 - **Web-first experience**: A SvelteKit frontend that accepts uploaded audio and displays AI-generated transcripts with timestamps and metadata.
-- **FastAPI backend**: Hosts the transcription queue, exposes REST endpoints, and processes uploads via OpenAI Whisper (or compatible models).
-- **Browser focus**: The project ships as a documented web stack—no desktop runtimes—so anyone can clone, run, and contribute via their browser.
+- **FastAPI backend**: Hosts the transcription queue, exposes REST endpoints, and processes uploads via OpenAI Whisper.
+- **Browser focus**: The project ships as a documented web stack without desktop runtimes so anyone can clone, run, and contribute via their browser.
 
 ## Stack
 

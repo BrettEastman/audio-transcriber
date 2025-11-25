@@ -151,7 +151,7 @@
       clearInterval(fakeProgressInterval);
       fakeProgressInterval = null;
       fakeProgress = 0;
-      isShowingProgress = false; // Hide progress bar when done
+      isShowingProgress = false;
     }
   });
 
