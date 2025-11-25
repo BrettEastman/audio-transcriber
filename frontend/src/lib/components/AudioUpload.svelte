@@ -1,9 +1,16 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { SUPPORTED_AUDIO_FORMATS } from "../../../../shared/types.js";
   import { transcriptionStore } from "../stores/transcription.js";
 
   let storeState = $derived($transcriptionStore);
   let isUploading = $derived(storeState.isUploading);
+  let currentJob = $derived(storeState.currentJob);
+  let isTranscribing = $derived(
+    currentJob?.status === "queued" || currentJob?.status === "processing"
+  );
+  let transcriptionProgress = $state(0);
+  let transcriptionStartTime = $state<number | null>(null);
   let isDragOver = $state(false);
   let fileInput: HTMLInputElement;
   let selectedLanguage = $state<string>("");
@@ -109,6 +116,47 @@
     transcriptionStore.cancelUpload();
   }
 
+  // Track transcription progress - calculate based on segments when available
+  $effect(() => {
+    if (isTranscribing && !transcriptionStartTime) {
+      // Transcription just started
+      transcriptionStartTime = Date.now();
+      transcriptionProgress = 10; // Start at 10%
+    } else if (!isTranscribing && transcriptionStartTime) {
+      // Transcription completed or not started
+      transcriptionStartTime = null;
+      if (currentJob?.status === "completed") {
+        transcriptionProgress = 100;
+      } else {
+        transcriptionProgress = 0;
+      }
+    } else if (currentJob?.status === "completed") {
+      // Ensure progress shows 100% when completed
+      transcriptionProgress = 100;
+    }
+  });
+
+  // Update transcription progress - smooth time-based estimation
+  onMount(() => {
+    const interval = setInterval(() => {
+      if (isTranscribing && transcriptionStartTime) {
+        const elapsed = Date.now() - transcriptionStartTime;
+        const elapsedSeconds = elapsed / 1000;
+
+        // Smooth progress curve: starts fast, slows down as it approaches completion
+        // This gives a more realistic feel than linear progress
+        // Formula: 10% + (90% * smooth curve that approaches but never reaches 100%)
+        const smoothProgress = 1 - Math.exp(-elapsedSeconds / 30); // Exponential approach
+        const progress = Math.min(
+          95, // Cap at 95% until actually complete
+          10 + smoothProgress * 85
+        );
+        transcriptionProgress = Math.round(progress);
+      }
+    }, 500); // Update every 500ms for smoother animation
+
+    return () => clearInterval(interval);
+  });
 </script>
 
 <div class="upload-container">
@@ -127,7 +175,7 @@
     ondrop={handleDrop}
     ondragover={handleDragOver}
     ondragleave={handleDragLeave}
-    onclick={isUploading ? undefined : triggerFileSelect}
+    onclick={isUploading || isTranscribing ? undefined : triggerFileSelect}
     role="button"
     tabindex="0"
     onkeydown={(e) => e.key === "Enter" && triggerFileSelect()}
@@ -135,17 +183,33 @@
     <div class="drop-content">
       <i
         class="ri-upload-cloud-2-line upload-icon"
-        class:uploading={isUploading}
+        class:uploading={isUploading || isTranscribing}
       ></i>
-      <h3>{!isUploading ? "Transcribe Audio File" : "Transcribing..."}</h3>
+      <h3>
+        {#if isTranscribing}
+          Transcribing...
+        {:else}
+          Transcribe Audio File
+        {/if}
+      </h3>
 
       {#if isUploading}
         <div class="upload-progress">
-          <p>Uploading your file...</p>
+          <p>Uploading file...</p>
           <button class="cancel-btn" onclick={(e) => cancelUpload(e)}>
             <i class="ri-close-line"></i>
             Cancel
           </button>
+        </div>
+      {:else if isTranscribing}
+        <div class="upload-progress">
+          <p>Transcribing audio... {transcriptionProgress}%</p>
+          <div class="progress-bar-container">
+            <div
+              class="progress-bar"
+              style="width: {transcriptionProgress}%"
+            ></div>
+          </div>
         </div>
       {:else}
         <p>Drag and drop your audio file here, or click to browse</p>
@@ -289,6 +353,54 @@
     align-items: center;
     gap: 1rem;
     width: 100%;
+  }
+
+  .progress-bar-container {
+    width: 100%;
+    max-width: 400px;
+    height: 8px;
+    background: var(--dashed-border);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      var(--dashed-border-hover),
+      var(--pulse-dark)
+    );
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-bar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
   }
 
   .cancel-btn {

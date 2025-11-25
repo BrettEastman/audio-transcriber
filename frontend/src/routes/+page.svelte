@@ -176,10 +176,10 @@
   :global(body) {
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      sans-serif;
+    /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif; */
     background: var(--white-background);
-    color: var(--blue-dark);
+    /* color: var(--blue-dark); */
   }
 
   .app {
