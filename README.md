@@ -1,4 +1,5 @@
 # Audio Transcriber
+
 <img width="1048" height="843" alt="Screenshot 2025-11-25 at 4 31 43 PM" src="https://github.com/user-attachments/assets/0e8f3458-96ed-4b2a-8eb6-1c51782ce94e" />
 <img width="1035" height="788" alt="Screenshot 2025-11-25 at 4 31 13 PM" src="https://github.com/user-attachments/assets/6482e78c-cb44-4495-94f7-df19445f70a1" />
 
@@ -21,6 +22,25 @@
 - `python3.12` (or compatible 3.12.x environment) with `pip` (pip is typically bundled with Python).
 - Node.js (tested on v22.x via Volta or nvm) and `npm`.
 - `ffmpeg` (required for audio format processing - install via `brew install ffmpeg` on macOS).
+
+#### System Requirements
+
+This project uses Whisper's **medium** model (~769 MB) for transcription. Recommended hardware:
+
+- **RAM**: 8GB minimum, 16GB recommended (model needs ~2-3GB RAM when loaded)
+- **CPU**: 4+ cores recommended for reasonable transcription speed
+- **GPU**: Optional but significantly faster
+  - **NVIDIA**: CUDA-compatible GPU with 4GB+ VRAM
+  - **Apple Silicon (M1/M2/M3)**: Automatic Metal acceleration
+  - **CPU-only**: Works but slower (expect ~2x realtime for medium model)
+- **Storage**: 2GB+ free space (for model download and temporary files)
+- **OS**: macOS 10.15+, Linux, or Windows 10+
+
+**Performance Notes:**
+
+- CPU-only transcription speed: ~2x realtime (a 10-minute audio file takes ~5 minutes to transcribe)
+- GPU acceleration can achieve 10-30x realtime depending on hardware
+- First run will download the model (~769 MB) which may take a few minutes
 
 ### 2. Backend setup (one-time)
 
