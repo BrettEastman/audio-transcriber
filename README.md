@@ -1,4 +1,6 @@
-# Audio Transcriber (Browser Edition)
+# Audio Transcriber
+<img width="1048" height="843" alt="Screenshot 2025-11-25 at 4 31 43 PM" src="https://github.com/user-attachments/assets/0e8f3458-96ed-4b2a-8eb6-1c51782ce94e" />
+<img width="1035" height="788" alt="Screenshot 2025-11-25 at 4 31 13 PM" src="https://github.com/user-attachments/assets/6482e78c-cb44-4495-94f7-df19445f70a1" />
 
 ## Overview
 
