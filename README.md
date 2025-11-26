@@ -16,17 +16,17 @@
 
 ### 1. Prerequisites
 
-- `python3.12` (or compatible 3.12.x environment) with `pip`.
+- `python3.12` (or compatible 3.12.x environment) with `pip` (pip is typically bundled with Python).
 - Node.js (tested on v22.x via Volta or nvm) and `npm`.
-- Optional: `ffmpeg` if audio formats require transcoding.
+- `ffmpeg` (required for audio format processing - install via `brew install ffmpeg` on macOS).
 
 ### 2. Backend setup (one-time)
 
 ```bash
 cd backend
-python -m venv venv
+python -m venv venv  # Creates virtual environment (venv is built into Python)
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt  # pip is typically bundled with Python
 ```
 
 - The backend listens on `http://localhost:8000` and exposes `/docs` for OpenAPI.
@@ -40,7 +40,6 @@ npm install
 ```
 
 - The SvelteKit app runs on `http://localhost:5173` and targets the backend API.
-- Use `npm run build` → `npm run preview` to test the production build locally.
 
 ### 4. Run both together
 
